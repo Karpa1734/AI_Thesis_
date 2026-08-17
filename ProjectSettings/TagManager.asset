@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 3
+  tags:
+  - Enemy
+  - EnemyBullet
+  - CollectArea
+  - Item
+  - Laser
+  - PlayerBullet
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - PlayerHit
+  - PlayerGraze
+  - EnemyBullet
+  - Background3D
+  - Player1
+  - Player2
+  - Player1Bullet
+  - Player2Bullet
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Back
+    uniqueID: 1549339301
+    locked: 0
+  - name: Middle
+    uniqueID: 515225517
+    locked: 0
+  - name: Front
+    uniqueID: 1912198263
+    locked: 0
+  m_RenderingLayers:
+  - Default

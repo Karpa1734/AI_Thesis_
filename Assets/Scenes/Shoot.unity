@@ -11796,7 +11796,7 @@ MonoBehaviour:
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
-  _disableEXAndVJTForDemo: 0
+  _disableEXAndVJTForDemo: 1
 --- !u!114 &695556690
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32274,7 +32274,7 @@ MonoBehaviour:
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
-  _disableEXAndVJTForDemo: 0
+  _disableEXAndVJTForDemo: 1
 --- !u!114 &1872656868
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -282,36 +282,6 @@ public class PlayerStatusManager : MonoBehaviour
                 var greed = GetComponentInChildren<Emitter_Greed>(true);
                 if (greed != null) greed.enabled = true;
             }
-            else if (characterData.characterName == "Linghua")
-            {
-                var lust = GetComponentInChildren<Emitter_Lust>(true);
-                if (lust != null) lust.enabled = true;
-            }
-            else if (characterData.characterName == "Loociel")
-            {
-                var pride = GetComponentInChildren<Emitter_Pride>(true);
-                if (pride != null) pride.enabled = true;
-            }
-            else if (characterData.characterName == "Shiori")
-            {
-                var sloth = GetComponentInChildren<Emitter_Sloth>(true);
-                if (sloth != null) sloth.enabled = true;
-            }
-            else if (characterData.characterName == "Eruru")
-            {
-                var envy = GetComponentInChildren<Emitter_Envy>(true);
-                if (envy != null) envy.enabled = true;
-            }
-            else if (characterData.characterName == "Anzu")
-            {
-                var gluttony = GetComponentInChildren<Emitter_Gluttony>(true);
-                if (gluttony != null) gluttony.enabled = true;
-            }
-            else if (characterData.characterName == "Alniel")
-            {
-                var void_ = GetComponentInChildren<Emitter_Void>(true);
-                if (void_ != null) void_.enabled = true;
-            }
         }
     }
 
@@ -674,8 +644,6 @@ public class PlayerStatusManager : MonoBehaviour
                     }
                 }
 
-                Emitter_Lust lustEm = GetComponentInChildren<Emitter_Lust>();
-                if (lustEm != null && lustEm.IsEXSpearActive) hasUsedEXDuringSpell = true;
 
                 if (hasUsedEXDuringSpell || _playerMove.ultimateEnergy <= 0.1f)
                 {
@@ -806,6 +774,11 @@ public class PlayerStatusManager : MonoBehaviour
 
     public void ActivateSpellCard()
     {
+        if (GameModeManager.IsStoryMode)
+        {
+            Debug.Log("<color=yellow>🛡️ [VJT BLOCKED] ストーリーモードのため領域展開は使用できません。</color>");
+            return;
+        }
         // =========================================================================
         // 🔍【VJT発動監査ログ】：なぜ領域が展開できないのかを徹底的にジャッジします
         // =========================================================================
@@ -1169,13 +1142,6 @@ public class PlayerStatusManager : MonoBehaviour
                     break;
                 }
             }
-        }
-
-        // 🌟【追加対策】：Emitter_Lust などの個別のEX発動フラグや槍の生存状態も合わせてチェック
-        Emitter_Lust lustEmitter = GetComponentInChildren<Emitter_Lust>();
-        if (lustEmitter != null && lustEmitter.IsEXSpearActive)
-        {
-            isExSkillTriggered = true;
         }
 
         // 一時退避用の持ち越し値（もし非EX解除なら半分を保持、EX解除なら0）

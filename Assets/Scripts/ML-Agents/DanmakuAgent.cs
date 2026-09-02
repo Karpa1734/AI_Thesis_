@@ -68,8 +68,8 @@ public class DanmakuAgent : Agent
     private Vector2 _chonLockedDirection = Vector2.zero;
 
     // 🌟【デモ用新設】：EXスキル（ULT）と領域展開（VJT）のAI使用を完全に禁止するスイッチ
-    [SerializeField] private bool _disableEXAndVJTForDemo = false;
-
+    // 🌟【変更】：EXスキル（ULT）と領域展開（VJT）のAI使用を完全禁止（trueに固定）
+    [SerializeField] private bool _disableEXAndVJTForDemo = true;
     // =========================================================================
     // ⏳【新規追加】：AI専用の「リキャストとは別の使用間（手加減タイマー）」
     // =========================================================================
@@ -298,31 +298,6 @@ public class DanmakuAgent : Agent
         // 🧠【強化学習専用ハッキング＆温存レール】
         if (Unity.MLAgents.Academy.Instance.IsCommunicatorOn)
         {
-            float currentUltGauge = (playerMove != null ? playerMove.ultimateEnergy : 0f);
-            bool isMyVjtActive = (statusManager != null && statusManager.isSpellCardActive);
-
-            if (!isMyVjtActive)
-            {
-                if (currentUltGauge >= 200f && !statusManager.isOverheated)
-                {
-                    if (attackAction >= 1 && attackAction <= 5) attackAction = 6;
-                }
-                else if (attackAction == 5)
-                {
-                    if (currentUltGauge >= 100f && currentUltGauge < 200f)
-                    {
-                        AddReward(-0.02f);
-                        attackAction = 0;
-                    }
-                }
-            }
-            else
-            {
-                if (attackAction == 5 && !IsVjtCancelAllowed())
-                {
-                    attackAction = 0;
-                }
-            }
         }
 
         bool autoSlowToggle = (discrete[3] == 1);

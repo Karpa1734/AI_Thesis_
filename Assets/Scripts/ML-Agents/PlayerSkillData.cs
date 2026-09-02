@@ -153,8 +153,10 @@ public class PlayerSkillData : ScriptableObject
         public BulletData bulletData;
         [Tooltip("跡引き（トレイル）に別種の弾を使いたい場合はここに別のアセットを登録してください（未設定ならメイン弾と同じになります）")]
         public BulletData trailBulletData;
+
+        [Tooltip("VSモード時のクールタイム（長い間隔）")]
         public float cooldown;
-        // 🔮【新設・汎用チャージ属性】：今後増えるチャージスキルは、これにチェックを入れるだけで自動適応されます！
+
         [Tooltip("ボタン長押しによる引き絞り/溜めチャージ系スキルの場合はチェックを入れてください")]
         public bool isChargeSkill;
         public string sePath;
@@ -171,6 +173,15 @@ public class PlayerSkillData : ScriptableObject
 
         public float cost;
         public float ultimateGain;
+
+        // =========================================================================
+        // 🌲【新規追加】：ストーリーモード専用の独立パラメータ
+        // =========================================================================
+        [Header("🌲 Story Mode Settings")]
+        [Tooltip("ストーリーモード時の発射スピード")]
+        public float storySpeed;
+        [Tooltip("ストーリーモード時のショット発射間隔（短い間隔で連射するためのタイマー用）")]
+        public float storyFireInterval;
     }
 
     [Header("Normal Skills")]

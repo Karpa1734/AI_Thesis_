@@ -1,4 +1,8 @@
-﻿using UnityEngine;
+﻿// --- BossDanmakuExecutor.cs ストーリーモード定型弾幕ループ完全対応版 ---
+using KanKikuchi.AudioManager;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// AIの手を離れたストーリーボス専用の独立弾幕実行モジュール
@@ -8,6 +12,7 @@ public class BossDanmakuExecutor : MonoBehaviour
 {
     private PlayerDanmakuEmitter _emitter;
     private PlayerStatusManager _statusManager;
+    private bool _isBossPatternRunning = false;
 
     private void Awake()
     {
@@ -19,6 +24,74 @@ public class BossDanmakuExecutor : MonoBehaviour
         {
             if (em != null) { _emitter = em; break; }
         }
+    }
+
+    private void Start()
+    {
+        // 🛡️ ストーリーモードかつ2P（ボス）の場合、AIエージェントが有効であれば強制無効化してプログラム制御へ完全移行
+        if (GameModeManager.IsStoryMode && _statusManager != null && _statusManager.playerId == 2)
+        {
+            DanmakuAgent agent = GetComponentInParent<DanmakuAgent>();
+            if (agent != null)
+            {
+                agent.enabled = false;
+                Debug.Log("<color=magenta>👑【BossDanmakuExecutor】ストーリーボスのAI制御を完全に遮断し、プログラム弾幕モードへ移行しました。</color>");
+            }
+        }
+    }
+
+    private void Update()
+    {
+        // ストーリーモードかつ戦闘中で、まだ弾幕ループが走っていない場合に起動
+        if (GameModeManager.IsStoryMode && PlayerMove.CanShoot && !_isBossPatternRunning)
+        {
+            if (_statusManager != null && _statusManager.playerId == 2)
+            {
+                StartCoroutine(BossPatternRoutine());
+            }
+        }
+    }
+
+    private IEnumerator BossPatternRoutine()
+    {
+        _isBossPatternRunning = true;
+
+        // 🎯 修正：characterData 直下ではなく、Zスキルの弾データ（skillZ.bulletData）等から安全に取得する
+        BulletData bossBulletData = (_statusManager != null && _statusManager.characterData != null)
+            ? _statusManager.characterData.skillZ.bulletData
+            : null;
+
+        yield return new WaitForSeconds(1.0f); // 戦闘開始直後のウェイト
+
+        while (GameModeManager.IsStoryMode && PlayerMove.CanShoot)
+        {
+            Vector3 pos = transform.position;
+
+            if (bossBulletData != null)
+            {
+                // 1. 自機狙い N-Way弾の発射
+                FireAimedNWayShot(bossBulletData, pos, way: 5, speed: 5.5f, wideAngle: 60f, angleOffset: 0f, delay: 1.0f);
+                if (SEManager.Instance != null) SEManager.Instance.Play(SEPath.SHOT1, 0.3f);
+
+                yield return new WaitForSeconds(1.2f);
+
+                // 2. 全方位弾（RoundShot）の発射
+                FireRoundShot(bossBulletData, pos, count: 12, speed: 4.0f, startAngle: Random.Range(0f, 360f), delay: 1.0f);
+                if (SEManager.Instance != null) SEManager.Instance.Play(SEPath.SHOT2, 0.3f);
+
+                yield return new WaitForSeconds(2.0f);
+            }
+            else
+            {
+                yield return new WaitForSeconds(1.0f);
+                if (_statusManager != null && _statusManager.characterData != null)
+                {
+                    bossBulletData = _statusManager.characterData.skillZ.bulletData;
+                }
+            }
+        }
+
+        _isBossPatternRunning = false;
     }
 
     /// <summary>

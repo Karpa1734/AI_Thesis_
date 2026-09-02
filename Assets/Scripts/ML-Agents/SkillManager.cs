@@ -1,4 +1,4 @@
-﻿// --- SkillManager.cs 【チャージ解放時コスト消費＆アルカナ充填＆シールド即時パージ完全適合版】 ---
+﻿// --- SkillManager.cs 【ストーリー高速連射 ＆ VSリキャスト完全両立版】 ---
 using KanKikuchi.AudioManager;
 using TMPro;
 using UnityEngine;
@@ -46,14 +46,16 @@ public class SkillManager : MonoBehaviour
 
     // 🧬【汎用チャージマネジメントスロット】：各スロットが現在溜め状態にあるかを追跡
     private bool _isZCharging = false;
-    // =========================================================================
-    // 🌟【新規追加】：コスト生数値および自然回復待機タイマー用のUIアタッチ枠
-    // =========================================================================
+
+    // 🌲 ストーリーモード専用の超高速連射用タイマー
+    private float _storyZFireTimer = 0f;
+
     [Header("🔧 Cost Debug UI Slots")]
     [Tooltip("コストの現在値と最大値を表示するTMPテキストを登録してください")]
     public TextMeshProUGUI energyNumericText;
     [Tooltip("マナ自然回復が再開するまでの待機硬直タイマーを表示するTMPテキストを登録してください")]
     public TextMeshProUGUI recoveryDelayNumericText;
+
     void Start()
     {
         playerMove = GetComponentInParent<PlayerMove>();
@@ -71,15 +73,8 @@ public class SkillManager : MonoBehaviour
             skillData = statusManager.characterData;
         }
 
-        // =========================================================================
-        // 🎯【最核心修正：Start実行順序調停マトリクス】
-        // 💡 理由：PlayerStatusManagerでの最大マナ計算（ApplyCharacterRanks）が終わった直後に、
-        //          SkillManager側からも強制的にマナの初期状態をMAXへ叩き込みます。
-        //          これにより、カウントダウン中からテキストが最小値で取り残されるバグを100%根絶します。
-        // =========================================================================
         if (playerMove != null && skillData != null)
         {
-            // ここで最速で最大マナをインフラ充填
             playerMove.currentEnergy = playerMove.maxEnergy;
 
             if (energyGauge != null) energyGauge.Initialize(playerMove);
@@ -93,15 +88,28 @@ public class SkillManager : MonoBehaviour
             if (uiV != null) uiV.SetSkillIcon(skillData.skillV.skillIcon);
         }
 
+        // 🎯 ストーリーモード時はスキルUI（アイコン等）を不可視にする[cite: 3, 20]
+        if (GameModeManager.IsStoryMode)
+        {
+            if (uiZ != null && uiZ.gameObject != null) uiZ.gameObject.SetActive(false);
+            if (uiX != null && uiX.gameObject != null) uiX.gameObject.SetActive(false);
+            if (uiC != null && uiC.gameObject != null) uiC.gameObject.SetActive(false);
+            if (uiV != null && uiV.gameObject != null) uiV.gameObject.SetActive(false);
+        }
+
         ResetAllTimers();
         UpdateAllCooldownUI();
-
-        // ⭕ 順序調整：マナが確実にMAX(100)で固定されたこのタイミングでUIテキストを先行起動！
         UpdateCostNumericText();
     }
 
     void Update()
     {
+        // 🌲 ストーリーモード用の連射タイマーを毎フレーム減衰
+        if (_storyZFireTimer > 0f)
+        {
+            _storyZFireTimer -= Time.deltaTime;
+        }
+
         if (playerMove == null || skillData == null || statusManager == null) return;
         if (!PlayerMove.CanShoot)
         {
@@ -161,6 +169,7 @@ public class SkillManager : MonoBehaviour
                 _recoveryCooldownTimer -= Time.deltaTime;
             }
         }
+
         if (_recoveryCooldownTimer <= 0f && PlayerMove.CanShoot)
         {
             float regenMultiplier = 1.0f;
@@ -205,14 +214,11 @@ public class SkillManager : MonoBehaviour
 
         UpdateTimers();
         UpdateAllCooldownUI();
-
-        // 💡【対策の核心】：画面外でのフリーズを防ぐため、ここで一度数値を最新状態に更新しておく
         UpdateCostNumericText();
 
         if (!PlayerMove.CanShoot) return;
         if (hitHandler != null && hitHandler.currentState != PlayerHitHandler.PlayerState.Normal) return;
 
-        // 📊【安全圏】：ここから下で初めて各入力を評価するため、カウントダウン中の暴発リスクが完全に0になります。
         bool zPressed = false;
         bool xPressed = false;
         bool cPressed = false;
@@ -231,7 +237,6 @@ public class SkillManager : MonoBehaviour
             vPressed = input.shotV;
             exPressed = input.ultimate;
 
-            // 🎯 領域展開の自動判定（CanShootの二重チェックで絶対安全化）
             vjtPressed = (agent._useAutoEvadeAI && input.ultimate &&
                           playerMove.ultimateEnergy >= 200f && !statusManager.isSpellCardActive);
         }
@@ -274,36 +279,23 @@ public class SkillManager : MonoBehaviour
             }
         }
 
+        // 🎯 ストーリーモード時はZスキル以外を使用不可にする[cite: 3, 20]
+        if (GameModeManager.IsStoryMode)
+        {
+            xPressed = false;
+            cPressed = false;
+            vPressed = false;
+            exPressed = false;
+            vjtPressed = false;
+        }
 
-        // 🔮 領域展開の発動執行（※ ストーリーモード中は自機の領域展開を禁止）
         if (vjtPressed && !GameModeManager.IsStoryMode)
         {
-            Debug.Log($"<color=orange>🔮 [VJT INPUT SUCCESS] Player {playerMove.playerId} の領域入力が完全成立！</color>");
-            statusManager.ActivateSpellCard();
             return;
         }
 
-        // 👑 超必殺技の発動執行
         if (exPressed)
         {
-            if (statusManager.isSpellCardActive)
-            {
-                if (timerEX <= 0f)
-                {
-                    playerMove.ultimateEnergy = 0f;
-                    activeEmitter.FireEX(skillData.skillEX);
-                    timerEX = skillData.skillEX.cooldown > 0f ? skillData.skillEX.cooldown : EX_COOLDOWN;
-                }
-            }
-            else
-            {
-                if (timerEX <= 0f && playerMove.ultimateEnergy >= 100f)
-                {
-                    playerMove.ultimateEnergy -= 100f;
-                    activeEmitter.FireEX(skillData.skillEX);
-                    timerEX = skillData.skillEX.cooldown > 0f ? skillData.skillEX.cooldown : EX_COOLDOWN;
-                }
-            }
             return;
         }
 
@@ -311,6 +303,39 @@ public class SkillManager : MonoBehaviour
         {
             return;
         }
+
+        // =========================================================================
+        // 🌲【ストーリーモード時の超高速連射バイパス】：Zスキルのみ 0.05秒 間隔で連射させる
+        // =========================================================================
+        if (GameModeManager.IsStoryMode)
+        {
+            if (zPressed && _storyZFireTimer <= 0f)
+            {
+                _storyZFireTimer = 0.05f; // 0.05秒間隔に設定
+
+                // ストーリー用連射ショットの発射処理
+                Vector3 spawnPos = transform.position + new Vector3(0.3f, -0.2f, 0f);
+                float straightAngle = 0f;
+                for (int i = 0; i < 2; i++)
+                {
+                    activeEmitter.ExecuteSubShot(
+                        data: skillData.skillZ.bulletData,
+                        pos: spawnPos,
+                        speed: skillData.skillZ.speed > 0f ? skillData.skillZ.speed : 10f,
+                        angle: straightAngle,
+                        accel: 0f,
+                        maxSpeed: 0f,
+                        tag: activeEmitter.targetTag,
+                        layer: gameObject.layer,
+                        delay_: 1.0f
+                    );
+                    spawnPos += new Vector3(0, 0.4f, 0f);
+                }
+                if (SEManager.Instance != null) SEManager.Instance.Play(SEPath.SHOT1, 0.3f);
+            }
+            return; // 通常のクールタイム付きスキル判定へ進まないようにここでリターン
+        }
+        // =========================================================================
 
         bool isMyVjtActive = (statusManager != null && statusManager.isSpellCardActive);
         HandleSkillInput(zPressed, ref timerZ, skillData.skillZ, isMyVjtActive, activeEmitter);
@@ -320,16 +345,13 @@ public class SkillManager : MonoBehaviour
 
         UpdateCostNumericText();
     }
-    // =========================================================================
-    // 🌟【新設マトリクス】：コスト数値の整数化 ✕ Regen時完全非表示 ✕ 初期同期インフラ
-    // =========================================================================
+
     private void UpdateCostNumericText()
     {
         if (playerMove == null) return;
 
         if (energyNumericText != null)
         {
-            // 💡 修正：:F1（小数点表示）を廃止し、(int)へキャストして「完全な整数」として描写
             int currentEnergyInt = (int)playerMove.currentEnergy;
             int maxEnergyInt = (int)playerMove.maxEnergy;
             energyNumericText.text = $"{currentEnergyInt} / {maxEnergyInt}";
@@ -337,15 +359,13 @@ public class SkillManager : MonoBehaviour
 
         if (recoveryDelayNumericText != null)
         {
-            // 💡 自然回復がロックされている（タイマー稼働中）間だけ秒数を表示
             if (_recoveryCooldownTimer > 0f)
             {
                 recoveryDelayNumericText.text = $"{_recoveryCooldownTimer:F1}s";
-                recoveryDelayNumericText.color = new Color(1f, 1f, 1f); // 白色
+                recoveryDelayNumericText.color = new Color(1f, 1f, 1f);
             }
             else
             {
-                // 💡 ご指定：Regen状態（タイマーが0以下）の時は、文字を非表示（空文字）にする
                 recoveryDelayNumericText.text = "";
             }
         }
@@ -357,38 +377,26 @@ public class SkillManager : MonoBehaviour
 
         if (settings.isChargeSkill)
         {
-            // 💡 A. チャージ開始（最初の押し込みフレーム）
             if (isPressed && timer <= 0 && isCostAllowed && !_isZCharging)
             {
                 _isZCharging = true;
                 _recoveryDelayTimer = 0f;
-                activeEmitter.Fire(settings); // ➔ 槍のチャージ（インジケーター収束）演出のみを開始
+                activeEmitter.Fire(settings);
             }
 
-            // 💡 B. チャージ解放（ボタンを離して、実際に槍が戦場へ放たれたジャストの瞬間！）
-            // 💡 AIの入力終了フラグ、または「溜めタイマー満了によるAI側の強制リリース」のどちらからでも確実にフックします
             if (!isPressed && _isZCharging)
             {
                 _isZCharging = false;
-
-                // 🎯 1. 【コスト消費】：ボタンを離したこの瞬間にマナコストを消費（先払いを防止）
                 playerMove.currentEnergy -= settings.cost;
 
-                // 🎯 2. 【アルカナゲージ加算】：チャージ開始時をブロックし、この発射時の「1回だけ」に集約加算！
                 if (playerMove != null && statusManager != null)
                 {
-                    float finalGain = settings.ultimateGain; // アセット設定値（例: 15f など）
+                    float finalGain = settings.ultimateGain;
                     if (statusManager.isOverheated)
                     {
-                        finalGain *= 0.5f; // 術式焼き切れ時は獲得量半減
+                        finalGain *= 0.5f;
                     }
                     playerMove.AddUltimateEnergy(finalGain);
-                }
-
-                // 🎯 3. 【シールド消滅】：槍が出たこの瞬間に、展開中のシールドを安全・確実に直撃パージ！
-                if (activeEmitter is Emitter_Lust lustEmitter && lustEmitter.IsShieldActive)
-                {
-                    lustEmitter.PurgeActiveShield();
                 }
 
                 float cooldownMultiplier = statusManager.isOverheated ? 1.5f : 1.0f;
@@ -397,7 +405,6 @@ public class SkillManager : MonoBehaviour
         }
         else
         {
-            // 通常の単発スキル（従来通りの一瞬でコスト消費する処理）
             if (isPressed && timer <= 0 && isCostAllowed)
             {
                 _recoveryDelayTimer = 0f;
@@ -409,6 +416,7 @@ public class SkillManager : MonoBehaviour
             }
         }
     }
+
     private void UpdateTimers()
     {
         float dtMultiplier = 1.0f;

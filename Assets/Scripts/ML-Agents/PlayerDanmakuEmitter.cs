@@ -232,7 +232,9 @@ public class PlayerDanmakuEmitter : MonoBehaviour
             case SkillPatternType.Saiki:
                 StartCoroutine(ChargeAndExecuteDefensiveField(s));
                 break;
-
+            case SkillPatternType.Wrath_Skill_C:
+                StartCoroutine(ExecuteSkillC(s));
+                break;
         }
 
         PlaySkillSE(s.sePath);

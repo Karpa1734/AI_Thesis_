@@ -1,4 +1,4 @@
-﻿// --- DefensiveField.cs 連続多段ヒット＆滞在弾消し完全調停版 ---
+﻿// --- DefensiveField.cs 連続多段ヒット＆滞在弾消し ＆ 展開中速度減衰対応版 ---
 using UnityEngine;
 using System.Collections;
 
@@ -11,6 +11,10 @@ public class DefensiveField : MonoBehaviour
     private Transform _owner; // 所有者のTransform
     private BulletData _data;
     private float _duration;
+
+    // 🌟【新規追加】：所有者の移動スクリプト参照
+    private PlayerMove _ownerMove;
+    [SerializeField] private float _fieldSpeedMultiplier = 0.2f; // 💡 展開中の速度倍率（例: 0.5倍速）
 
     [Header("Size Settings")]
     [SerializeField] private float _maxScale = 2.0f; //
@@ -30,6 +34,12 @@ public class DefensiveField : MonoBehaviour
         _owner = owner; //
         _data = data; //
         _duration = duration; //
+
+        if (owner != null)
+        {
+            _ownerMove = owner.GetComponent<PlayerMove>();
+            if (_ownerMove == null) _ownerMove = owner.GetComponentInParent<PlayerMove>();
+        }
 
         if (overrideScale > 0f) //
         {
@@ -52,6 +62,12 @@ public class DefensiveField : MonoBehaviour
 
     private IEnumerator FieldRoutine() //
     {
+        // 🌟【速度減衰の適用開始】：フィールド展開の瞬間から所有者の移動速度を制限
+        if (_ownerMove != null)
+        {
+            _ownerMove.skillSpeedMultiplier = _fieldSpeedMultiplier;
+        }
+
         float elapsed = 0; //
         while (elapsed < _expandTime) //
         {
@@ -75,6 +91,12 @@ public class DefensiveField : MonoBehaviour
             elapsed += Time.deltaTime; //
             transform.localScale = Vector3.one * Mathf.SmoothStep(_maxScale, 0, elapsed / _shrinkTime); //
             yield return null; //
+        }
+
+        // 🌟【速度復元】：フィールドが完全に消滅した瞬間に速度倍率を等速（1.0f）に戻す
+        if (_ownerMove != null)
+        {
+            _ownerMove.skillSpeedMultiplier = 1.0f;
         }
 
         Destroy(gameObject); //

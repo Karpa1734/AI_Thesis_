@@ -272,16 +272,9 @@ public class PlayerStatusManager : MonoBehaviour
             PlayerDanmakuEmitter[] allEmitters = GetComponentsInChildren<PlayerDanmakuEmitter>(true);
             foreach (var em in allEmitters) em.enabled = false;
 
-            if (characterData.characterName == "Karin")
-            {
-                var wrath = GetComponentInChildren<Emitter_Wrath>(true);
-                if (wrath != null) wrath.enabled = true;
-            }
-            else if (characterData.characterName == "Charlotte")
-            {
-                var greed = GetComponentInChildren<Emitter_Greed>(true);
-                if (greed != null) greed.enabled = true;
-            }
+            var wrath = GetComponentInChildren<Emitter_Wrath>(true);
+            if (wrath != null) wrath.enabled = true;
+
         }
     }
 

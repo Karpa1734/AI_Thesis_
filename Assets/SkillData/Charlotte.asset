@@ -40,7 +40,7 @@ MonoBehaviour:
   - skillType: 2
     passiveName: 
     description: 
-  vjtEffectType: 3
+  vjtEffectType: 0
   skillZ:
     skillName: "\u932C\u91D1\u5263\u30B4\u30FC\u30EB\u30C9\u30A2\u30BE\u30C3\u30C8"
     skillIcon: {fileID: 21300000, guid: 79ee490740de9f24dbc952a82f682c22, type: 3}
@@ -85,40 +85,40 @@ MonoBehaviour:
     skillName: "\u30A2\u30EB\u30B1\u30DF\u30FC\u30D5\u30E9\u30C3\u30B7\u30E5"
     skillIcon: {fileID: 21300000, guid: 481c0b3f8f05e1d41bfec267f36cb5a0, type: 3}
     skillDescription: 
-    patternType: 11
-    bulletData: {fileID: 11400000, guid: 4446437525ff49b4abfac0fe6ef616ee, type: 2}
+    patternType: 8
+    bulletData: {fileID: 11400000, guid: ba5aac4e8884f894c870efdf608d8392, type: 2}
     trailBulletData: {fileID: 0}
-    cooldown: 1.5
+    cooldown: 2
     isChargeSkill: 0
-    sePath: 
-    count: 60
-    speed: 1.5
+    sePath: Laser2
+    count: 80
+    speed: 2.5
     angleOffset: 0
-    wideAngle: 0.3
+    wideAngle: 0.5
     moveSpeedMultiplier: 0.3
-    delay: 20
-    cost: 45
-    ultimateGain: 8
+    delay: 1
+    cost: 0
+    ultimateGain: 10
     storySpeed: 0
     storyFireInterval: 0
   skillV:
     skillName: "\u30DE\u30B0\u30CD\u30C3\u30C8\u30B9\u30EC\u30A4\u30D6"
     skillIcon: {fileID: 21300000, guid: 9b21e57d97f8d79418e1928e94877cf4, type: 3}
     skillDescription: 
-    patternType: 13
+    patternType: 16
     bulletData: {fileID: 11400000, guid: 381538d65205de743b4e7db8e743c41e, type: 2}
     trailBulletData: {fileID: 0}
-    cooldown: 12
+    cooldown: 10
     isChargeSkill: 0
     sePath: 
     count: 0
-    speed: 4.5
+    speed: 0
     angleOffset: 0
     wideAngle: 0
-    moveSpeedMultiplier: 0
-    delay: 0
-    cost: 50
-    ultimateGain: 5
+    moveSpeedMultiplier: 1
+    delay: 30
+    cost: 60
+    ultimateGain: 10
     storySpeed: 0
     storyFireInterval: 0
   skillEX:

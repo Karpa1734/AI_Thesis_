@@ -1,0 +1,21 @@
+{
+    "timestamp": "2026-09-20 20:15:47",
+    "player": {
+        "entityName": "Player_1P",
+        "totalDamageDealt": 23.0,
+        "totalDamageTaken": 120.0,
+        "hitCountDealt": 1,
+        "damageTakenCount": 4,
+        "combatDuration": 10.62556266784668,
+        "peakDPS": 0.0
+    },
+    "enemy": {
+        "entityName": "Boss_2P",
+        "totalDamageDealt": 120.0,
+        "totalDamageTaken": 23.0,
+        "hitCountDealt": 4,
+        "damageTakenCount": 1,
+        "combatDuration": 10.62556266784668,
+        "peakDPS": 30.0
+    }
+}

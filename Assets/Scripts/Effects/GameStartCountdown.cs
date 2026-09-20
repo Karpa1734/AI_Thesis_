@@ -17,6 +17,7 @@ public class GameStartCountdown : MonoBehaviour
 
     void Start()
     {
+
         // 最初の開始（既にInstanceはあるのでそのまま呼ぶ）
         StartCountdown();
     }

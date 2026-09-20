@@ -13476,6 +13476,7 @@ GameObject:
   - component: {fileID: 788560152}
   - component: {fileID: 788560153}
   - component: {fileID: 788560154}
+  - component: {fileID: 788560155}
   m_Layer: 0
   m_Name: SystemManager
   m_TagString: Untagged
@@ -13566,6 +13567,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _editorMode: 0
+--- !u!114 &788560155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788560148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 580ad8fb692e3704e97f3660cd34d2e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerStats:
+    entityName: Player_1P
+    totalDamageDealt: 0
+    totalDamageTaken: 0
+    hitCountDealt: 0
+    damageTakenCount: 0
+    combatDuration: 0
+    peakDPS: 0
+  enemyStats:
+    entityName: Boss_2P
+    totalDamageDealt: 0
+    totalDamageTaken: 0
+    hitCountDealt: 0
+    damageTakenCount: 0
+    combatDuration: 0
+    peakDPS: 0
 --- !u!1 &799577537
 GameObject:
   m_ObjectHideFlags: 0

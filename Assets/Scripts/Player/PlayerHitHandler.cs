@@ -212,7 +212,8 @@ public class PlayerHitHandler : MonoBehaviour
 
         Vector3 hitPos = transform.position;
 
-        if (playerMove.IsInvincible) yield break;
+        // 🌟 タイムアップ時は無敵中であってもガードを無視して敗北演出へ進む
+        if (playerMove.IsInvincible && !isTriggeredByTimeUp) yield break;
 
         currentState = PlayerState.Down;
         // =========================================================================
@@ -344,16 +345,8 @@ public class PlayerHitHandler : MonoBehaviour
             myStatusManager.SendMessage("UpdateUI", SendMessageOptions.DontRequireReceiver);
         }
 
-        // 星の計算の事前評価
-        bool isMatchGameOver = false;
-        if (myStatusManager != null && !GameModeManager.IsStoryMode && playerMove != null && playerMove.Opponent != null)
-        {
-            PlayerStatusManager oppStatus = playerMove.Opponent.GetComponent<PlayerStatusManager>();
-            if (oppStatus != null && oppStatus.life >= 1)
-            {
-                isMatchGameOver = true;
-            }
-        }
+        // 🌟 1回勝負のため、ダウンした瞬間（または時間切れ）に無条件で試合終了（マッチゲームオーバー）とする
+        bool isMatchGameOver = true;
 
         if (myStatusManager != null)
         {
@@ -512,72 +505,33 @@ public class PlayerHitHandler : MonoBehaviour
         yield return StartCoroutine(RoundResetSequence());
     }
     /// <summary>
-    /// ⏳【タイムアップ勝敗判定判定インフラ】
-    /// 1Pと2Pの残りHP割合（現在HP / 最大HP）を比較し、勝敗またはドローを決定して適切なシーエンスをキックします。
+    /// ⏳【タイムアップ勝敗判定】：制限時間切れ時は問答無用で自機（1P）の敗北とする
     /// </summary>
     public void EvaluateTimeUpVictory()
     {
         if (PlayerMove.AllPlayers == null || PlayerMove.AllPlayers.Count < 2) return;
 
-        PlayerMove p1 = PlayerMove.AllPlayers[0];
-        PlayerMove p2 = PlayerMove.AllPlayers[1];
-
-        if (p1 == null || p2 == null) return;
-
-        PlayerStatusManager s1 = p1.GetComponent<PlayerStatusManager>();
-        PlayerStatusManager s2 = p2.GetComponent<PlayerStatusManager>();
-
-        if (s1 == null || s2 == null) return;
-
-        // --- 🧪 1. 両者の現在値と最大値の生データを安全に抽出 ---
-        float p1Current = s1.isSpellCardActive ? s1.spellHP : s1.currentHP;
-        float p1Max = s1.isSpellCardActive ? s1.spellMaxHP : s1.maxHP;
-
-        float p2Current = s2.isSpellCardActive ? s2.spellHP : s2.currentHP;
-        float p2Max = s2.isSpellCardActive ? s2.spellMaxHP : s2.maxHP;
-
-        // --- 🛡️ 2. 【初期化フレームバグ・ランク格差の絶対肉壁ガード】 ---
-        // 💡 理由：コルーチンの1フレーム待ちラグにより、ゲーム開始直後は初期値(100)に対してデータがズレる事象を回避します。
-        // 現在のHPが最大HP以上、または最大HPとの差が 0.5f 未満（ほぼ無傷）なら、強制的に割合を「1.0 (100%満タン)」として扱います。
-        float p1Ratio = 0f;
-        if (p1Current >= p1Max || Mathf.Abs(p1Max - p1Current) < 0.5f)
+        // ループを使って 1P（自機）の PlayerMove を安全に取得する
+        PlayerMove p1 = null;
+        foreach (var p in PlayerMove.AllPlayers)
         {
-            p1Ratio = 1.0f; // 確定で満タン扱い
-        }
-        else
-        {
-            p1Ratio = p1Max > 0f ? p1Current / p1Max : 0f;
+            if (p != null)
+            {
+                PlayerStatusManager status = p.GetComponent<PlayerStatusManager>();
+                if (status != null && status.playerId == 1)
+                {
+                    p1 = p;
+                    break;
+                }
+            }
         }
 
-        float p2Ratio = 0f;
-        if (p2Current >= p2Max || Mathf.Abs(p2Max - p2Current) < 0.5f)
+        if (p1 != null)
         {
-            p2Ratio = 1.0f; // 確定で満タン扱い
-        }
-        else
-        {
-            p2Ratio = p2Max > 0f ? p2Current / p2Max : 0f;
-        }
-
-        Debug.Log($"<color=cyan>⏳ [Time Up Exact Check] 1P(ID:{s1.playerId}): {p1Ratio * 100f:F2}% (HP:{p1Current}/{p1Max}) | 2P(ID:{s2.playerId}): {p2Ratio * 100f:F2}% (HP:{p2Current}/{p2Max})</color>");
-
-        // --- ⚔️ 3. 最終ジャッジ ---
-        // 💡 差分が 0.0001f（0.01%未満）の極小の計算誤差範囲であれば、文句なしの完全ドロー（引き分け）にします。
-        if (Mathf.Abs(p1Ratio - p2Ratio) < 0.0001f)
-        {
-            // 🛑 完全なる引き分け（ドロー）
-            StartCoroutine(TriggerDrawSequence());
-        }
-        else
-        {
-            // ⚔️ 割合が低い方のプレイヤー（敗者）の爆散ルーチンを起動
-            PlayerHitHandler loserHandler = (p1Ratio < p2Ratio)
-                ? p1.GetComponentInChildren<PlayerHitHandler>()
-                : p2.GetComponentInChildren<PlayerHitHandler>();
-
+            PlayerHitHandler loserHandler = p1.GetComponentInChildren<PlayerHitHandler>();
             if (loserHandler != null)
             {
-                // 時間切れによる敗北フラグを立てて、通常の撃墜演出（スローモーション等）へ安全に流し込む
+                // 時間切れによる敗北フラグを立てて、自機の爆散・敗北演出ルーチンへ直行させる
                 loserHandler.isTriggeredByTimeUp = true;
                 loserHandler.currentState = PlayerState.Hit;
                 loserHandler.StartCoroutine(loserHandler.ExplosionAndStunRoutine());

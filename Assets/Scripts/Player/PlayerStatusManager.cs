@@ -195,8 +195,8 @@ public class PlayerStatusManager : MonoBehaviour
         {
             if (playerId == 1)
             {
-                life = 3;
-                stockLives = 3;
+                life = 1;
+                stockLives = 1;
             }
         }
         else
@@ -1208,15 +1208,25 @@ public class PlayerStatusManager : MonoBehaviour
 
         // =========================================================================
         // 🎯【バトルメトリクス連携】：ダメージイベントの計測マネージャーへの通知
-        // 💡 playerId == 1 なら 1P（自機）が被弾、playerId == 2 なら 2P（敵機）が被弾
         // =========================================================================
         if (BattleMetricsManager.Instance != null)
         {
             bool isPlayerHit = (playerId == 1);
             BattleMetricsManager.Instance.RecordDamageEvent(isPlayerHit, amount);
         }
+
+        // =========================================================================
+        // 🛡️【自機の不死身化仕様】：1P（自機）の場合はダメージによるHP減少・ダウンを無効化する
+        // (ただし上記のメトリクス記録により、被弾した事実とダメージ量はしっかり計測されます)
+        // =========================================================================
+        if (playerId == 1)
+        {
+            UpdateUI();
+            return false; // 自機は被弾では絶対にやられない
+        }
         // =========================================================================
 
+        // 2P（敵機）側の通常ダメージ処理
         if (isSpellCardActive)
         {
             spellHP -= amount;
@@ -1247,7 +1257,7 @@ public class PlayerStatusManager : MonoBehaviour
         {
             currentHP = 0;
 
-            // 📊 決着（死亡）がついた瞬間にメトリクスのトラッキングを終了して出力
+            // 📊 敵の撃破（決着）がついた瞬間にメトリクスのトラッキングを終了して出力
             if (BattleMetricsManager.Instance != null)
             {
                 BattleMetricsManager.Instance.EndTrackingAndExport();
@@ -1289,54 +1299,10 @@ public class PlayerStatusManager : MonoBehaviour
 
     public bool SubtractLifeAndCheckRebirth()
     {
-        if (GameModeManager.IsStoryMode)
-        {
-            if (stockLives > 0)
-            {
-                stockLives--;
-                life = stockLives;
-                UpdateUI();
-                return false;
-            }
-            return true;
-        }
-        else
-        {
-            if (_playerMove != null && _playerMove.Opponent != null)
-            {
-                PlayerStatusManager oppStatus = _playerMove.Opponent.GetComponent<PlayerStatusManager>();
-                if (oppStatus != null)
-                {
-                    if (GameDifficultyManager.IsEndlessMode)
-                    {
-                        Debug.Log("<color=orange>🔄【Endless Mode】エンドレスモード稼働中。勝ち星を加算せず、次のラウンドへ進みます。</color>");
-
-                        oppStatus.UpdateUI();
-                        UpdateUI();
-
-                        return false;
-                    }
-
-                    if (oppStatus.life >= 1)
-                    {
-                        oppStatus.life = 2;
-                        oppStatus.UpdateUI();
-                        UpdateUI();
-                        return true;
-                    }
-                    else
-                    {
-                        oppStatus.life = 1;
-                        oppStatus.UpdateUI();
-                        UpdateUI();
-                        return false;
-                    }
-                }
-            }
-            UpdateUI();
-            return false;
-        }
+        // 1回勝負のため、ラウンドを持ち越さず即座にゲームセット（true）を返す
+        return true;
     }
+
 
     public IEnumerator GradualHealthRecovery(float duration)
     {

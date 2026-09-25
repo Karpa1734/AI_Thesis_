@@ -1260,7 +1260,8 @@ public class PlayerStatusManager : MonoBehaviour
             // 📊 敵の撃破（決着）がついた瞬間にメトリクスのトラッキングを終了して出力
             if (BattleMetricsManager.Instance != null)
             {
-                BattleMetricsManager.Instance.EndTrackingAndExport();
+                // 引数：(勝利フラグ=true, 現在HP=0, 最大HP=maxHP)
+                BattleMetricsManager.Instance.EndTrackingAndExport(true, 0f, maxHP);
             }
 
             return true;

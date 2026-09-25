@@ -50,7 +50,7 @@ public class PlayerMove : MonoBehaviour
     [Header("Movement Constants")]
     public float normalSpeed = 5.0f; // 通常時の速度
     public float focusSpeed = 2.0f;  // 低速移動時の速度
-    private float invincibleTimer = 0f;
+    public float invincibleTimer = 0f;
     private float deathBombTimer = 0f;
     public bool IsInvincible => invincibleTimer > 0;
     public bool IsInDeathBombWindow => deathBombTimer > 0;

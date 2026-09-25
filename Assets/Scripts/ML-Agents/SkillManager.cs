@@ -338,10 +338,11 @@ public class SkillManager : MonoBehaviour
         // =========================================================================
 
         bool isMyVjtActive = (statusManager != null && statusManager.isSpellCardActive);
-        HandleSkillInput(zPressed, ref timerZ, skillData.skillZ, isMyVjtActive, activeEmitter);
-        HandleSkillInput(xPressed, ref timerX, skillData.skillX, isMyVjtActive, activeEmitter);
-        HandleSkillInput(cPressed, ref timerC, skillData.skillC, isMyVjtActive, activeEmitter);
-        HandleSkillInput(vPressed, ref timerV, skillData.skillV, isMyVjtActive, activeEmitter);
+        HandleSkillInput(zPressed, ref timerZ, skillData.skillZ, isMyVjtActive, activeEmitter, "Z");
+        HandleSkillInput(xPressed, ref timerX, skillData.skillX, isMyVjtActive, activeEmitter, "X");
+        HandleSkillInput(cPressed, ref timerC, skillData.skillC, isMyVjtActive, activeEmitter, "C");
+        HandleSkillInput(vPressed, ref timerV, skillData.skillV, isMyVjtActive, activeEmitter, "V");
+
 
         UpdateCostNumericText();
     }
@@ -370,8 +371,7 @@ public class SkillManager : MonoBehaviour
             }
         }
     }
-
-    private void HandleSkillInput(bool isPressed, ref float timer, PlayerSkillData.SkillSettings settings, bool isVjtActive, PlayerDanmakuEmitter activeEmitter)
+    private void HandleSkillInput(bool isPressed, ref float timer, PlayerSkillData.SkillSettings settings, bool isVjtActive, PlayerDanmakuEmitter activeEmitter, string skillKey)
     {
         bool isCostAllowed = (playerMove.currentEnergy >= settings.cost);
 
@@ -382,6 +382,9 @@ public class SkillManager : MonoBehaviour
                 _isZCharging = true;
                 _recoveryDelayTimer = 0f;
                 activeEmitter.Fire(settings);
+
+                // 🌟 スキル使用を記録
+                RecordSkill(skillKey);
             }
 
             if (!isPressed && _isZCharging)
@@ -411,9 +414,21 @@ public class SkillManager : MonoBehaviour
                 playerMove.currentEnergy -= settings.cost;
                 activeEmitter.Fire(settings);
 
+                // 🌟 スキル使用を記録
+                RecordSkill(skillKey);
+
                 float cooldownMultiplier = statusManager.isOverheated ? 1.5f : 1.0f;
                 timer = settings.cooldown * cooldownMultiplier;
             }
+        }
+    }
+
+    private void RecordSkill(string skillKey)
+    {
+        if (BattleMetricsManager.Instance != null && statusManager != null)
+        {
+            // スキル発動時は used を加算するため、第2引数に true (またはヒット判定) を渡す
+            BattleMetricsManager.Instance.RecordSkillUsage(skillKey, true);
         }
     }
 

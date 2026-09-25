@@ -1,21 +1,49 @@
 {
-    "timestamp": "2026-09-22 20:22:10",
-    "player": {
-        "entityName": "Player_1P",
-        "totalDamageDealt": 116.0,
-        "totalDamageTaken": 25.0,
-        "hitCountDealt": 4,
-        "damageTakenCount": 2,
-        "combatDuration": 10.775869369506836,
-        "peakDPS": 47.0
+    "trialMeta": {
+        "subjectId": "P01",
+        "mode": "Proposed",
+        "playOrder": 1,
+        "timeLimit": 180.0,
+        "timestamp": "2026-09-25 16:12:45"
     },
-    "enemy": {
-        "entityName": "Boss_2P",
-        "totalDamageDealt": 25.0,
-        "totalDamageTaken": 116.0,
-        "hitCountDealt": 2,
-        "damageTakenCount": 4,
-        "combatDuration": 10.775869369506836,
-        "peakDPS": 15.0
+    "battleResult": {
+        "result": "Victory",
+        "duration": 97.62249755859375,
+        "enemyRemainingHP": 0.0,
+        "enemyRemainingHPRatio": 0.0
+    },
+    "playerPerformance": {
+        "totalDamageDealt": 139.0,
+        "totalDamageTaken": 705.0,
+        "hitCountTaken": 39,
+        "grazeCount": 0,
+        "averageDPS": 1.4238520860671998,
+        "skillUsage": {
+            "skillZ_Aim": {
+                "used": 180,
+                "hits": 180,
+                "blockedHits": 0
+            },
+            "skillX_Trap": {
+                "used": 55,
+                "hits": 55,
+                "blockedHits": 0
+            },
+            "skillC_Special": {
+                "used": 39,
+                "hits": 39,
+                "blockedHits": 0
+            },
+            "skillV_Guard": {
+                "used": 6,
+                "hits": 0,
+                "blockedHits": 6
+            }
+        }
+    },
+    "enemyPerformance": {
+        "totalDamageDealt": 705.0,
+        "totalDamageTaken": 139.0,
+        "hitCountDealt": 39
     }
 }

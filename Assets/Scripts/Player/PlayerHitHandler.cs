@@ -507,11 +507,36 @@ public class PlayerHitHandler : MonoBehaviour
     /// <summary>
     /// ⏳【タイムアップ勝敗判定】：制限時間切れ時は問答無用で自機（1P）の敗北とする
     /// </summary>
+    /// <summary>
+    /// ⏳【タイムアップ勝敗判定】：制限時間切れ時は問答無用で自機（1P）の敗北（タイムアップ敗北）とする
+    /// </summary>
     public void EvaluateTimeUpVictory()
     {
         if (PlayerMove.AllPlayers == null || PlayerMove.AllPlayers.Count < 2) return;
 
-        // ループを使って 1P（自機）の PlayerMove を安全に取得する
+        // 1. まず、タイムアップ時点でバトルの計測（JSON出力）を「時間切れ敗北（false）」として終了させる
+        if (BattleMetricsManager.Instance != null)
+        {
+            // 敵の現在HPと最大HPを取得して渡す
+            float enemyCurrentHP = 0f;
+            float enemyMaxHP = 100f;
+            foreach (var p in PlayerMove.AllPlayers)
+            {
+                if (p != null)
+                {
+                    PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>();
+                    if (ps != null && ps.playerId == 2)
+                    {
+                        enemyCurrentHP = ps.isSpellCardActive ? ps.spellHP : ps.currentHP;
+                        enemyMaxHP = ps.isSpellCardActive ? ps.spellMaxHP : ps.maxHP;
+                        break;
+                    }
+                }
+            }
+            BattleMetricsManager.Instance.EndTrackingAndExport(false, enemyCurrentHP, enemyMaxHP);
+        }
+
+        // 2. 1P（自機）を取得して強制敗北演出（爆発・ゲームオーバー）を安全にキックする
         PlayerMove p1 = null;
         foreach (var p in PlayerMove.AllPlayers)
         {
@@ -531,9 +556,14 @@ public class PlayerHitHandler : MonoBehaviour
             PlayerHitHandler loserHandler = p1.GetComponentInChildren<PlayerHitHandler>();
             if (loserHandler != null)
             {
-                // 時間切れによる敗北フラグを立てて、自機の爆散・敗北演出ルーチンへ直行させる
                 loserHandler.isTriggeredByTimeUp = true;
                 loserHandler.currentState = PlayerState.Hit;
+
+                // フリーズを防ぐため、コルーチンではなく直接ゲームオーバー処理（またはトリガー）を安全に呼ぶか、無敵を解除してコルーチンを走らせる
+                if (loserHandler.playerMove != null)
+                {
+                    loserHandler.playerMove.invincibleTimer = 0f; // 無敵を強制解除
+                }
                 loserHandler.StartCoroutine(loserHandler.ExplosionAndStunRoutine());
             }
         }

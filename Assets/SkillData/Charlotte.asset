@@ -54,7 +54,7 @@ MonoBehaviour:
     count: 5
     speed: 6
     angleOffset: 0
-    wideAngle: 70
+    wideAngle: 20
     moveSpeedMultiplier: 2
     delay: 2
     cost: 0

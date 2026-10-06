@@ -4,34 +4,34 @@
         "mode": "Proposed",
         "playOrder": 1,
         "timeLimit": 180.0,
-        "timestamp": "2026-09-28 16:59:58"
+        "timestamp": "2026-10-06 14:46:07"
     },
     "battleResult": {
         "result": "Victory",
-        "duration": 30.21103858947754,
+        "duration": 20.007402420043947,
         "enemyRemainingHP": 0.0,
         "enemyRemainingHPRatio": 0.0
     },
     "playerPerformance": {
-        "totalDamageDealt": 133.0,
-        "totalDamageTaken": 115.0,
+        "totalDamageDealt": 117.0,
+        "totalDamageTaken": 85.0,
         "hitCountTaken": 5,
         "grazeCount": 0,
-        "averageDPS": 4.402364253997803,
+        "averageDPS": 5.847835540771484,
         "skillUsage": {
             "skillZ_Aim": {
-                "used": 86,
-                "hits": 86,
+                "used": 48,
+                "hits": 48,
                 "blockedHits": 0
             },
             "skillX_Trap": {
-                "used": 29,
-                "hits": 29,
+                "used": 21,
+                "hits": 21,
                 "blockedHits": 0
             },
             "skillC_Special": {
-                "used": 13,
-                "hits": 13,
+                "used": 16,
+                "hits": 16,
                 "blockedHits": 0
             },
             "skillV_Guard": {
@@ -42,8 +42,8 @@
         }
     },
     "enemyPerformance": {
-        "totalDamageDealt": 115.0,
-        "totalDamageTaken": 133.0,
+        "totalDamageDealt": 85.0,
+        "totalDamageTaken": 117.0,
         "hitCountDealt": 5
     }
 }

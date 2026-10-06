@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f43c8d5c06716bd4393aeca4cbc58a93, type: 3}
   m_Name: Karin
   m_EditorClassIdentifier: 
-  rankHP: 3
-  rankMP: 3
-  rankAttack: 4
-  rankAgility: 5
-  rankMMPRegen: 3
+  rankHP: 2
+  rankMP: 2
+  rankAttack: 2
+  rankAgility: 2
+  rankMMPRegen: 2
   rankSpellZone: 2
   characterName: Karin
   imageColor: {r: 1, g: 0, b: 0, a: 1}
@@ -36,10 +36,7 @@ MonoBehaviour:
   baseScrollSpeed: {x: 0, y: -0.4}
   additiveRotateSpeed: 25
   additiveScrollSpeed: {x: 0.2, y: 0.2}
-  passiveSkills:
-  - skillType: 1
-    passiveName: 
-    description: 
+  passiveSkills: []
   vjtEffectType: 0
   skillZ:
     skillName: "\u9000\u9B54\u306E\u8B77\u7B26"

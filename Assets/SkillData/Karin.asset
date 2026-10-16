@@ -18,7 +18,7 @@ MonoBehaviour:
   rankAgility: 2
   rankMMPRegen: 2
   rankSpellZone: 2
-  characterName: Karin
+  characterName: Player
   imageColor: {r: 1, g: 0, b: 0, a: 1}
   characterSprite: {fileID: 21300000, guid: 42bf0e9ed81a35846b400dc145f6425b, type: 3}
   spellCardName: "\u300C\u9EC4\u6CC9\u6D25\u9053\u6577\u300D"

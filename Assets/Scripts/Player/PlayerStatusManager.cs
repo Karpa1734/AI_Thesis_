@@ -162,6 +162,8 @@ public class PlayerStatusManager : MonoBehaviour
     {
         _playerMove = GetComponent<PlayerMove>();
 
+        hpNumericText.gameObject.SetActive(false);
+
         int targetSelectedId = (playerId == 1) ? GameSelectionData.SelectedCharacterP1 : GameSelectionData.SelectedCharacterP2;
         if (playerId == 2 && GameModeManager.IsStoryMode)
         {

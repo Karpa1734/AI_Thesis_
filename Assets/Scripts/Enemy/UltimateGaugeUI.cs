@@ -11,6 +11,12 @@ public class UltimateGaugeUI : MonoBehaviour
     // 🌟【新規追加】：同じオブジェクト内にある発光コントローラーをキャッシュする枠
     private UltimateGaugeGlowController _glowController;
 
+    void Start()
+    {
+        // 🌟 ゲージ（UIオブジェクト自体）を非表示にする
+        gameObject.SetActive(false);
+    }
+
     public void Initialize(PlayerMove playerMove)
     {
         _playerMove = playerMove;

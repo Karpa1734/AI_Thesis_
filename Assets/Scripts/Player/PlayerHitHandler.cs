@@ -56,7 +56,7 @@ public class PlayerHitHandler : MonoBehaviour
 
     void Update()
     {
-     
+
     }
 
     void LateUpdate()
@@ -484,7 +484,7 @@ public class PlayerHitHandler : MonoBehaviour
             yield return StartCoroutine(PerformKORoundEndRoutine(isMatchGameOver));
         }
     }
-    
+
 
     public IEnumerator TriggerDrawSequence()
     {
@@ -506,9 +506,6 @@ public class PlayerHitHandler : MonoBehaviour
     }
     /// <summary>
     /// ⏳【タイムアップ勝敗判定】：制限時間切れ時は問答無用で自機（1P）の敗北とする
-    /// </summary>
-    /// <summary>
-    /// ⏳【タイムアップ勝敗判定】：制限時間切れ時は問答無用で自機（1P）の敗北（タイムアップ敗北）とする
     /// </summary>
     public void EvaluateTimeUpVictory()
     {
@@ -579,23 +576,23 @@ public class PlayerHitHandler : MonoBehaviour
     IEnumerator RoundResetSequence()
     {
         // 🌟【スローモーション解除の確実化】：自動移動開始のファーストフレームで確実に等倍復帰
-        Time.timeScale = 1.0f; 
+        Time.timeScale = 1.0f;
 
         // 全員の当たり判定やスプライトを復元
-        foreach (var p in PlayerMove.AllPlayers) 
+        foreach (var p in PlayerMove.AllPlayers)
         {
-            if (p == null) continue; 
-            PlayerHitHandler hh = p.GetComponentInChildren<PlayerHitHandler>(); 
-            if (hh != null) 
+            if (p == null) continue;
+            PlayerHitHandler hh = p.GetComponentInChildren<PlayerHitHandler>();
+            if (hh != null)
             {
-                hh.SetPlayerActiveState(true); 
-                hh.currentState = PlayerState.Normal; 
+                hh.SetPlayerActiveState(true);
+                hh.currentState = PlayerState.Normal;
             }
 
-            PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>(); 
-            if (ps != null) 
+            PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>();
+            if (ps != null)
             {
-                StartCoroutine(ps.GradualHealthRecovery(1.0f)); 
+                StartCoroutine(ps.GradualHealthRecovery(1.0f));
 
                 // =========================================================================
                 // 🛡️【最核心】：次ラウンドのスキル封印 ＆ UIチカチカバグの完全パージ
@@ -603,132 +600,132 @@ public class PlayerHitHandler : MonoBehaviour
                 //          ここで物理的に上書き初期化し、次ラウンドへの持ち込みを遮断します。
                 // =========================================================================
                 ps.isSpellCardActive = false; // 領域強制OFF
-                ps.isOverheated = false;      // 冷却デバフ強制OFF[cite: 11, 16, 32]
-                ps.spellTimer = 0f; 
-                ps.overheatTimer = 0f; 
-                ps.invincibleTimer = 0f; 
-                
+                ps.isOverheated = false;      // 冷却デバフ強制OFF
+                ps.spellTimer = 0f;
+                ps.overheatTimer = 0f;
+                ps.invincibleTimer = 0f;
+
                 // ゲージアニメーションフラグを叩き落としてチカチカを根治
                 System.Reflection.FieldInfo animBarField = typeof(PlayerStatusManager).GetField("isAnimatingSpellBar", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (animBarField != null) animBarField.SetValue(ps, false); 
+                if (animBarField != null) animBarField.SetValue(ps, false);
 
                 // 確定したマナ上限を最新の状態で再同期
-                ps.SyncBarsImmediately(); 
+                ps.SyncBarsImmediately();
             }
 
             // 🎯 各プレイヤーに付いている全エミッターのEX発動中ロックを完全解除
-            PlayerDanmakuEmitter[] allEmitters = p.GetComponentsInChildren<PlayerDanmakuEmitter>(true); 
-            foreach (var emitter in allEmitters) 
+            PlayerDanmakuEmitter[] allEmitters = p.GetComponentsInChildren<PlayerDanmakuEmitter>(true);
+            foreach (var emitter in allEmitters)
             {
                 if (emitter != null)
                 {
                     System.Reflection.FieldInfo exActiveField = typeof(PlayerDanmakuEmitter).GetField("_isEXSkillActive", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     if (exActiveField != null)
                     {
-                        exActiveField.SetValue(emitter, false); // 硬直ロックを強制パージ[cite: 6, 19]
+                        exActiveField.SetValue(emitter, false); // 硬直ロックを強制パージ
                     }
                 }
             }
 
             // 無敵点滅アニメーションも確定OFF
-            PlayerAnimation pAnim = p.GetComponentInChildren<PlayerAnimation>(true); 
+            PlayerAnimation pAnim = p.GetComponentInChildren<PlayerAnimation>(true);
             if (pAnim != null)
             {
-                pAnim.isInvincible = false; 
+                pAnim.isInvincible = false;
             }
         }
 
-        float moveDuration = 1.8f; 
-        float elapsed = 0f; 
+        float moveDuration = 1.8f;
+        float elapsed = 0f;
 
-        System.Collections.Generic.Dictionary<GameObject, Vector3> startPositions = new System.Collections.Generic.Dictionary<GameObject, Vector3>(); 
-        System.Collections.Generic.Dictionary<GameObject, Vector3> targetPositions = new System.Collections.Generic.Dictionary<GameObject, Vector3>(); 
+        System.Collections.Generic.Dictionary<GameObject, Vector3> startPositions = new System.Collections.Generic.Dictionary<GameObject, Vector3>();
+        System.Collections.Generic.Dictionary<GameObject, Vector3> targetPositions = new System.Collections.Generic.Dictionary<GameObject, Vector3>();
 
-        foreach (var p in PlayerMove.AllPlayers) 
+        foreach (var p in PlayerMove.AllPlayers)
         {
-            if (p == null) continue; 
-            PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>(); 
-            if (ps != null) 
+            if (p == null) continue;
+            PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>();
+            if (ps != null)
             {
-                startPositions[p.gameObject] = p.transform.position; 
-                float targetX = (ps.playerId == 2) ? 3.5f : -3.5f; 
-                targetPositions[p.gameObject] = new Vector3(targetX, 0f, 0f); 
+                startPositions[p.gameObject] = p.transform.position;
+                float targetX = (ps.playerId == 2) ? 3.5f : -3.5f;
+                targetPositions[p.gameObject] = new Vector3(targetX, 0f, 0f);
             }
         }
 
-        while (elapsed < moveDuration) 
+        while (elapsed < moveDuration)
         {
-            elapsed += Time.deltaTime; 
-            float rawPercent = Mathf.Clamp01(elapsed / moveDuration); 
-            float smoothPercent = rawPercent * rawPercent * (3f - 2f * rawPercent); 
+            elapsed += Time.deltaTime;
+            float rawPercent = Mathf.Clamp01(elapsed / moveDuration);
+            float smoothPercent = rawPercent * rawPercent * (3f - 2f * rawPercent);
 
-            foreach (var p in PlayerMove.AllPlayers) 
+            foreach (var p in PlayerMove.AllPlayers)
             {
-                if (p == null || !startPositions.ContainsKey(p.gameObject)) continue; 
+                if (p == null || !startPositions.ContainsKey(p.gameObject)) continue;
 
-                bool isAIControlled = false; 
-                if (GameModeManager.IsStoryMode) 
+                bool isAIControlled = false;
+                if (GameModeManager.IsStoryMode)
                 {
-                    PlayerStatusManager currentPs = p.GetComponent<PlayerStatusManager>(); 
-                    if (currentPs != null && currentPs.playerId == 2) 
+                    PlayerStatusManager currentPs = p.GetComponent<PlayerStatusManager>();
+                    if (currentPs != null && currentPs.playerId == 2)
                     {
-                        isAIControlled = true; 
+                        isAIControlled = true;
                     }
-                    else if (p.name.Contains("AI") || p.name.Contains("Enemy") || p.name.Contains("CPU")) 
+                    else if (p.name.Contains("AI") || p.name.Contains("Enemy") || p.name.Contains("CPU"))
                     {
-                        isAIControlled = true; 
+                        isAIControlled = true;
                     }
                 }
 
-                if (isAIControlled) 
+                if (isAIControlled)
                 {
-                    Vector3 nextPos = Vector3.Lerp(startPositions[p.gameObject], targetPositions[p.gameObject], smoothPercent); 
-                    p.transform.position = nextPos; 
+                    Vector3 nextPos = Vector3.Lerp(startPositions[p.gameObject], targetPositions[p.gameObject], smoothPercent);
+                    p.transform.position = nextPos;
 
-                    float clampedX = Mathf.Clamp(p.transform.position.x, -8.5f, 8.5f); 
-                    float clampedY = Mathf.Clamp(p.transform.position.y, -4.5f, 4.5f); 
-                    p.transform.position = new Vector3(clampedX, clampedY, 0f); 
+                    float clampedX = Mathf.Clamp(p.transform.position.x, -8.5f, 8.5f);
+                    float clampedY = Mathf.Clamp(p.transform.position.y, -4.5f, 4.5f);
+                    p.transform.position = new Vector3(clampedX, clampedY, 0f);
                 }
             }
-            yield return null; 
+            yield return null;
         }
 
-        foreach (var p in PlayerMove.AllPlayers) 
+        foreach (var p in PlayerMove.AllPlayers)
         {
-            if (p == null) continue; 
+            if (p == null) continue;
 
-            bool isAIControlled = false; 
-            if (GameModeManager.IsStoryMode) 
+            bool isAIControlled = false;
+            if (GameModeManager.IsStoryMode)
             {
-                PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>(); 
-                if (ps != null && ps.playerId == 2) isAIControlled = true; 
-                else if (p.name.Contains("AI") || p.name.Contains("Enemy") || p.name.Contains("CPU")) isAIControlled = true; 
+                PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>();
+                if (ps != null && ps.playerId == 2) isAIControlled = true;
+                else if (p.name.Contains("AI") || p.name.Contains("Enemy") || p.name.Contains("CPU")) isAIControlled = true;
             }
 
-            if (isAIControlled) 
+            if (isAIControlled)
             {
-                PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>(); 
-                float targetX = (ps != null && ps.playerId == 2) ? 3.5f : -3.5f; 
-                p.transform.position = new Vector3(targetX, 0f, 0f); 
+                PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>();
+                float targetX = (ps != null && ps.playerId == 2) ? 3.5f : -3.5f;
+                p.transform.position = new Vector3(targetX, 0f, 0f);
             }
         }
 
-        if (MatchTimerUI.Instance != null) 
+        if (MatchTimerUI.Instance != null)
         {
-            MatchTimerUI.Instance.ResetRoundTimer(99f); 
+            MatchTimerUI.Instance.ResetRoundTimer(99f);
         }
 
-        if (GameStartCountdown.Instance != null) 
+        if (GameStartCountdown.Instance != null)
         {
-            GameStartCountdown.Instance.StartCountdown(); 
+            GameStartCountdown.Instance.StartCountdown();
         }
-        else 
+        else
         {
-            PlayerMove.CanInput = true; 
+            PlayerMove.CanInput = true;
         }
 
-        isTriggeredByTimeUp = false; 
-        yield return null; 
+        isTriggeredByTimeUp = false;
+        yield return null;
     }
 
     /// <summary>
@@ -757,82 +754,28 @@ public class PlayerHitHandler : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
 
             // =========================================================================
-            // 🎯【演出改善①】：会話が始まる「直前」のタイミングで勝者メッセージをパッと表示！
+            // 🎯【演出改善】：会話を挟まず、勝者メッセージを表示して余韻（1.5秒）を待ってタイトルへ直行！
             // =========================================================================
             ShowWinMessage();
 
-            yield return new WaitForSeconds(1.0f);
-            // =========================================================================
-            // 👑【勝敗キャラ自動検知 ✕ 2通りCSV動的分岐インフラ】
-            // =========================================================================
-            NovelSystem.NovelDialogManager dialogManager = UnityEngine.Object.FindAnyObjectByType<NovelSystem.NovelDialogManager>();
-            if (dialogManager != null)
+            yield return new WaitForSecondsRealtime(1.5f);
+
+            if (myStatusManager != null && myStatusManager.winText != null)
             {
-                // シーン上の全プレイヤーから 1P と 2P の名前を純粋にスキャン抽出
-                string p1Name = "Player1";
-                string p2Name = "Player2";
-                int winnerPlayerId = 1;
-
-                if (PlayerMove.AllPlayers != null && PlayerMove.AllPlayers.Count >= 2)
-                {
-                    PlayerStatusManager s1 = PlayerMove.AllPlayers[0].GetComponent<PlayerStatusManager>();
-                    PlayerStatusManager s2 = PlayerMove.AllPlayers[1].GetComponent<PlayerStatusManager>();
-
-                    if (s1 != null && s1.characterData != null) p1Name = s1.characterData.characterName;
-                    if (s2 != null && s2.characterData != null) p2Name = s2.characterData.characterName;
-
-                    if (playerMove.Opponent != null)
-                    {
-                        PlayerStatusManager oppStatus = playerMove.Opponent.GetComponent<PlayerStatusManager>();
-                        if (oppStatus != null) winnerPlayerId = oppStatus.playerId;
-                    }
-                }
-
-                // 引数を再定義して会話システムをキック！
-                dialogManager.StartVictoryDialogue(p1Name, p2Name, winnerPlayerId);
-
-                // 会話（3秒自動進行 or Zキー）が終わるまで、勝者テキストを出したままホールド待機
-                while (NovelSystem.NovelDialogManager.isTalking)
-                {
-                    yield return null;
-                }
-
-                // =========================================================================
-                // 🎯【演出改善②】：会話が終了した瞬間（Canvas非表示後）、勝者メッセージを非表示に
-                // =========================================================================
-                if (myStatusManager != null && myStatusManager.winText != null)
-                {
-                    myStatusManager.winText.gameObject.SetActive(false);
-                }
-
-                // 前のステップで実装した、会話終了後の心地いい余韻タイム（1秒間の静寂ウェイト）
-                yield return new WaitForSecondsRealtime(1.0f);
-            }
-            else
-            {
-                // 会話マネージャーがシーンにいない場合のセーフティフォールバック
-                yield return new WaitForSecondsRealtime(3.5f);
-                if (myStatusManager != null && myStatusManager.winText != null)
-                {
-                    myStatusManager.winText.gameObject.SetActive(false);
-                }
+                myStatusManager.winText.gameObject.SetActive(false);
             }
 
-            // 👑 4. すべての演出と1秒の余韻を完全に消化しきったら、満を持してポーズ画面（リザルトメニュー）へ！
+            // 👑 すべての演出と余韻を消化しきったら、満を持してポーズ画面（リザルト/タイトルメニュー）へ！
             if (myStatusManager != null) myStatusManager.TriggerGameOver();
         }
         else
         {
             // 🔷 1本目のダウン時：
-            // 🌟【スローモーションフリーズの根治】：
-            // ダウンしたその場で「1.2秒間」だけリアルタイム基準で余韻を見せたら、
-            // 文字のフェードアウトを待たずに、ここで即座にタイムスケールを等速（1.0f）に叩き戻します！
             yield return new WaitForSecondsRealtime(1.2f);
-            Time.timeScale = 1.0f; // 🌟ここで素早くスローモーションを解除！
+            Time.timeScale = 1.0f;
 
             if (myStatusManager != null && myStatusManager.koText != null)
             {
-                // 等速の心地いいスピードの中で「Down !!」の文字がサラサラと消えていきます
                 yield return myStatusManager.StartCoroutine(myStatusManager.FadeOutKOAnimation(0.4f));
             }
 
@@ -843,7 +786,6 @@ public class PlayerHitHandler : MonoBehaviour
                 myStatusManager.winText.gameObject.SetActive(false);
             }
 
-            // 自動リセットコルーチン（この内部はもう等速で快適に動きます）へ進行
             yield return StartCoroutine(RoundResetSequence());
         }
     }
@@ -859,9 +801,6 @@ public class PlayerHitHandler : MonoBehaviour
         if (playerMove != null) playerMove.enabled = active;
     }
 
-    // =========================================================================
-    // ⭕ 修正後：ラウンド決着時、画面上の弾だけでなく自機のEX状態・チカチカ点滅も完全初期化
-    // =========================================================================
     private void ClearAllBullets(bool force)
     {
         DanmakuBullet[] playerBullets = Object.FindObjectsByType<DanmakuBullet>(FindObjectsSortMode.None);
@@ -876,12 +815,8 @@ public class PlayerHitHandler : MonoBehaviour
             b.Deactivate(true);
         }
 
-        // =========================================================================
-        // 🛡️【最核心修正】：次ラウンドのスキル封印 ＆ 永久チカチカ点滅バグの根治パージ
-        // =========================================================================
         if (force)
         {
-            // 1. 自機にアタッチされているすべての Emitter のEXスキル稼働フラグを強制的に false へリセット
             PlayerDanmakuEmitter[] allEmitters = transform.root.GetComponentsInChildren<PlayerDanmakuEmitter>(true);
             foreach (var emitter in allEmitters)
             {
@@ -895,7 +830,6 @@ public class PlayerHitHandler : MonoBehaviour
                 }
             }
 
-            // 2. 自機のアニメーションコンポーネントの無敵チカチカフラグを強制的に OFF にリセット
             PlayerAnimation anim = transform.root.GetComponentInChildren<PlayerAnimation>(true);
             if (anim != null)
             {

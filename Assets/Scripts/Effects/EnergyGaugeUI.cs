@@ -8,7 +8,14 @@ public class EnergyGaugeUI : MonoBehaviour
     [SerializeField] private Slider _energySlider; // シンプルなSlider1本のみ[cite: 10]
 
     private PlayerMove _playerMove;
+    void Start()
+    {
+        // ゲージ自体を非表示にする場合
+        gameObject.SetActive(false);
 
+        // または Slider だけを非表示にしたい場合
+        // if (_energySlider != null) _energySlider.gameObject.SetActive(false);
+    }
     public void Initialize(PlayerMove playerMove)
     {
         _playerMove = playerMove;

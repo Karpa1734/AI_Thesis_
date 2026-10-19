@@ -87,17 +87,15 @@ public class BattleMetricsManager : MonoBehaviour
         report.trialMeta.timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         matchDurationTimer = 0f;
         isTracking = true;
-        Debug.Log("📊 [BattleMetrics] 実験用ログの計測を開始しました。");
+        Debug.Log("📊 [BattleMetrics] 実験用CSVログの計測を開始しました。");
     }
 
     private void Update()
     {
         if (!isTracking) return;
 
-        if (PlayerMove.CanShoot)
-        {
-            matchDurationTimer += Time.deltaTime;
-        }
+        // 従来型・提案型どちらのモードでも共通して時間をカウント
+        matchDurationTimer += Time.deltaTime;
     }
 
     /// <summary>
@@ -127,8 +125,6 @@ public class BattleMetricsManager : MonoBehaviour
     /// <summary>
     /// スキルの使用回数やヒット数を記録する
     /// </summary>
-    /// <param name="skillKey">"Z", "X", "C", "V"</param>
-    /// <param name="isHit">命中したか</param>
     public void RecordSkillUsage(string skillKey, bool isHit = false)
     {
         if (!isTracking) return;
@@ -155,11 +151,8 @@ public class BattleMetricsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 戦闘終了時（敵撃破 or 時間切れ）に呼び出し、データをJSONに出力する
+    /// 戦闘終了時（敵撃破 or 時間切れ）に呼び出し、データをCSVに出力する
     /// </summary>
-    /// <param name="isVictory">true: 敵撃破クリア, false: 時間切れ敗北</param>
-    /// <param name="enemyCurrentHP">終了時の敵のHP</param>
-    /// <param name="enemyMaxHP">敵の最大HP</param>
     public void EndTrackingAndExport(bool isVictory, float enemyCurrentHP, float enemyMaxHP)
     {
         if (!isTracking) return;
@@ -178,22 +171,63 @@ public class BattleMetricsManager : MonoBehaviour
         Debug.Log($"=== 📊 実験用戦闘データ結果 [{report.battleResult.result}] ===");
         Debug.Log($"クリアタイム: {report.battleResult.duration:F2}秒 | 敵残りHP率: {report.battleResult.enemyRemainingHPRatio * 100f:F1}%");
 
-        ExportToJson();
+        ExportToCsv();
     }
 
-    private void ExportToJson()
+    /// <summary>
+    /// CSV形式でファイルに出力する（既存ファイルがある場合は1行ずつデータを追記）
+    /// </summary>
+    /// <summary>
+    /// CSV形式でファイルに出力する（既存ファイルがある場合は1行ずつデータを追記）
+    /// </summary>
+    private void ExportToCsv()
     {
-        string jsonString = JsonUtility.ToJson(report, true);
-        string filePath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "BattleReport.json");
+        string filePath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "BattleReport.csv");
+        bool fileExists = File.Exists(filePath);
+
+        // 提案モード・従来モードで完全に同一の列順序・項目名に統一
+        string header = "Timestamp,SubjectId,Mode,PlayOrder,TimeLimit,Result,Duration,EnemyRemainingHP,EnemyRemainingHPRatio," +
+                        "TotalDamageDealt,TotalDamageTaken,HitCountTaken,GrazeCount,AverageDPS," +
+                        "SkillZ_Used,SkillZ_Hits,SkillX_Used,SkillX_Hits,SkillC_Used,SkillC_Hits,SkillV_Used,SkillV_Blocked";
+
+        string row = $"{report.trialMeta.timestamp}," +
+                     $"{report.trialMeta.subjectId}," +
+                     $"{report.trialMeta.mode}," +
+                     $"{report.trialMeta.playOrder}," +
+                     $"{report.trialMeta.timeLimit}," +
+                     $"{report.battleResult.result}," +
+                     $"{report.battleResult.duration:F2}," +
+                     $"{report.battleResult.enemyRemainingHP:F2}," +
+                     $"{report.battleResult.enemyRemainingHPRatio:F4}," +
+                     $"{report.playerPerformance.totalDamageDealt:F2}," +
+                     $"{report.playerPerformance.totalDamageTaken:F2}," +
+                     $"{report.playerPerformance.hitCountTaken}," +
+                     $"{report.playerPerformance.grazeCount}," +
+                     $"{report.playerPerformance.averageDPS:F2}," +
+                     $"{report.playerPerformance.skillUsage.skillZ_Aim.used}," +
+                     $"{report.playerPerformance.skillUsage.skillZ_Aim.hits}," +
+                     $"{report.playerPerformance.skillUsage.skillX_Trap.used}," +
+                     $"{report.playerPerformance.skillUsage.skillX_Trap.hits}," +
+                     $"{report.playerPerformance.skillUsage.skillC_Special.used}," +
+                     $"{report.playerPerformance.skillUsage.skillC_Special.hits}," +
+                     $"{report.playerPerformance.skillUsage.skillV_Guard.used}," +
+                     $"{report.playerPerformance.skillUsage.skillV_Guard.blockedHits}";
 
         try
         {
-            File.WriteAllText(filePath, jsonString);
-            Debug.Log($"💾 [BattleMetrics] 実験用JSON出力完了: {filePath}");
+            using (StreamWriter writer = new StreamWriter(filePath, true, System.Text.Encoding.UTF8))
+            {
+                if (!fileExists)
+                {
+                    writer.WriteLine(header); // 初回作成時のみ共通のヘッダーを書き込む
+                }
+                writer.WriteLine(row);
+                Debug.Log($"💾 [BattleMetrics] 統合CSV出力・追記完了: {filePath}");
+            }
         }
-        catch (System.Exception e)
+        catch (System.Exception e) // 👈 ここが正しく catch節 になっていなかったことが原因のエラーです
         {
-            Debug.LogError($"❌ [BattleMetrics] 出力失敗: {e.Message}");
+            Debug.LogError($"❌ [BattleMetrics] CSV出力失敗: {e.Message}");
         }
     }
 }

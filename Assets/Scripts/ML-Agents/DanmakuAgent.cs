@@ -486,6 +486,28 @@ public class DanmakuAgent : Agent
         var clusterPoints = new System.Collections.Generic.List<Vector2>();
         var analyzedCounted = new System.Collections.Generic.HashSet<Collider2D>();
 
+        // =========================================================================
+        // 🌟【新規追加】：画面上の「TrapField（警告エリア・お邪魔弾幕）」を検知して回避対象に加える
+        // =========================================================================
+        TrapField[] activeTraps = UnityEngine.Object.FindObjectsByType<TrapField>(FindObjectsSortMode.None);
+        foreach (var trap in activeTraps)
+        {
+            if (trap == null) continue;
+
+            Vector2 trapPos = trap.transform.position;
+            Vector2 dirFromTrap = (Vector2)transform.position - trapPos;
+            float distance = dirFromTrap.magnitude;
+
+            // 罠や警告エリアの近く（半径内）にいる場合、強力な反発力を加えて外へ逃げる
+            if (distance < 3.5f)
+            {
+                hasDanger = true;
+                float force = 5.0f / Mathf.Max(0.2f, distance * distance);
+                totalRepulsion += dirFromTrap.normalized * force;
+            }
+        }
+        // =========================================================================
+
         foreach (var col in hitColliders)
         {
             if (col == null || !col.CompareTag(targetBulletTag) || analyzedCounted.Contains(col)) continue;

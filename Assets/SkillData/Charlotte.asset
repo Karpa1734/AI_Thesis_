@@ -51,8 +51,8 @@ MonoBehaviour:
     count: 5
     speed: 6
     angleOffset: 0
-    wideAngle: 20
-    moveSpeedMultiplier: 2
+    wideAngle: 8
+    moveSpeedMultiplier: 0.3
     delay: 2
     cost: 0
     ultimateGain: 0
@@ -83,9 +83,9 @@ MonoBehaviour:
     skillIcon: {fileID: 21300000, guid: 481c0b3f8f05e1d41bfec267f36cb5a0, type: 3}
     skillDescription: 
     patternType: 8
-    bulletData: {fileID: 11400000, guid: ba5aac4e8884f894c870efdf608d8392, type: 2}
+    bulletData: {fileID: 11400000, guid: fa20d94ae12adc843ad676c940ea89ec, type: 2}
     trailBulletData: {fileID: 0}
-    cooldown: 2
+    cooldown: 3
     isChargeSkill: 0
     sePath: Laser2
     count: 80
@@ -103,7 +103,7 @@ MonoBehaviour:
     skillIcon: {fileID: 21300000, guid: 9b21e57d97f8d79418e1928e94877cf4, type: 3}
     skillDescription: 
     patternType: 16
-    bulletData: {fileID: 11400000, guid: 381538d65205de743b4e7db8e743c41e, type: 2}
+    bulletData: {fileID: 11400000, guid: d613950acd235674cbf1bba02ac98054, type: 2}
     trailBulletData: {fileID: 0}
     cooldown: 10
     isChargeSkill: 0
@@ -113,7 +113,7 @@ MonoBehaviour:
     angleOffset: 0
     wideAngle: 0
     moveSpeedMultiplier: 1
-    delay: 30
+    delay: 1
     cost: 0
     ultimateGain: 10
     storySpeed: 0

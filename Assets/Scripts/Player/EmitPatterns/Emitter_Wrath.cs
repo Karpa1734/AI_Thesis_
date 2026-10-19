@@ -63,85 +63,48 @@ public class Emitter_Wrath : PlayerDanmakuEmitter
     /// </summary>
     private IEnumerator ExecuteIcicleRay(PlayerSkillData.SkillSettings s)
     {
-        if (BulletManager.Instance == null) yield break;
+        _activeSkillCoroutines++;
 
-        // 🛡️ 最大数チェック
-        if (_activeIcicleLaserSets != null)
+        // 1. 攻撃対象（相手）の現在座標を正確にキャプチャする
+        Vector3 targetPos = transform.position; // フォールバック
+        foreach (var p in PlayerMove.AllPlayers)
         {
-            _activeIcicleLaserSets.RemoveAll(set => set == null || set.TrueForAll(l => l == null));
-            if (_activeIcicleLaserSets.Count >= MAX_ICICLE_SETS)
+            if (p != null && p.gameObject != _rootOwner)
             {
-                yield break;
+                targetPos = p.transform.position;
+                break;
             }
+        }
+
+        // 2. 領域展開中（VJT発動中）ならサイズや持続時間を動的にブースト！
+        PlayerStatusManager myStatus = GetComponentInParent<PlayerStatusManager>();
+        bool isSpellActive = (myStatus != null && myStatus.isSpellCardActive);
+
+        float duration = 2.0f; // 罠の持続時間
+        float scale = 2.5f;    // 罠のサイズ
+
+        if (isSpellActive)
+        {
+            duration = 3.5f;
+            scale = 4.0f; // 領域中ならさらに巨大化
         }
 
         PlaySkillSE(s.sePath);
 
-        int warningFrame = 30; // 予告フレーム (0.5秒)
-        float targetAngle = GetAngleToTarget(transform.position) + s.angleOffset;
+        // 3. 敵の座標に罠オブジェクトをインスタンス化
+        GameObject trapObj = Instantiate(s.bulletData.bulletPrefab, targetPos, Quaternion.identity);
+        int ownerId = (myStatus != null) ? myStatus.playerId : 1;
+        string assignedTag = (ownerId == 1) ? "PlayerBullet" : "EnemyBullet";
+        int assignedLayer = LayerMask.NameToLayer((ownerId == 1) ? "Player1Bullet" : "Player2Bullet");
 
-        List<EnemyLaserBeam> currentSetLasers = new List<EnemyLaserBeam>();
+        TrapField trap = trapObj.GetComponent<TrapField>();
+        if (trap == null) trap = trapObj.AddComponent<TrapField>();
 
-        EnemyLaserBeam laser = CreateLaserShot(
-            s.bulletData,
-            transform.position,
-            s.speed,
-            s.count,
-            s.wideAngle,
-            warningFrame,
-            isSetupB: true
-        );
+        // 4. パラメータをインジェクションして起動
+        trap.Initialize(transform, s.bulletData, duration, assignedTag, assignedLayer, scale, warningTime: 0.6f);
 
-        if (laser != null)
-        {
-            currentSetLasers.Add(laser);
-
-            // 予告線が敵機方向を向くようにデータを登録
-            laser.AddData(new EnemyLaserBeam.LaserTransformData
-            {
-                frame = 0,
-                dist = 0f,
-                distAngle = 0f,
-                laserAngle = targetAngle,
-                distAngleVel = 0f,
-                laserAngleVel = 0f,
-                isSmooth = true
-            });
-
-            // 予告時間後の実線化ロックデータ
-            laser.AddData(new EnemyLaserBeam.LaserTransformData
-            {
-                frame = warningFrame,
-                laserAngleVel = 0f,
-                isSmooth = true
-            });
-
-            laser.Fire();
-        }
-
-        if (currentSetLasers.Count > 0)
-        {
-            _activeIcicleLaserSets.Add(currentSetLasers);
-            // 💡 s.moveSpeedMultiplier を用いた移動デバフの適用をライフタイム管理に連動させる
-            float totalLifeTime = (warningFrame / 60f) + 1.0f;
-            StartCoroutine(ManageIcicleSetLifetime(currentSetLasers, totalLifeTime, s.moveSpeedMultiplier));
-        }
-
-        // 🌟【3回使用ごとのクールタイム管理】
-        _icicleUseCount++;
-        if (_icicleUseCount >= 3)
-        {
-            _icicleUseCount = 0; // 3回に達したのでカウンターをリセット
-
-            // 💡 3回目の発射時のみ、クールタイム分だけしっかりとウェイトを挟む
-            float coolTime = s.cooldown > 0f ? s.cooldown : 1.0f;
-            yield return new WaitForSeconds(coolTime);
-        }
-        else
-        {
-            // 1回目和2回目は即座に完了扱いとし、スイスイ連射できるようにする
-            yield break;
-        }
+        yield return new WaitForSeconds(0.2f);
+        _activeSkillCoroutines--;
     }
 
     /// <summary>
@@ -217,7 +180,7 @@ public class Emitter_Wrath : PlayerDanmakuEmitter
         }
 
         // チャージ演出
-        float chargeTime = 0.3f; //
+        float chargeTime = 0.1f; //
         if (BossEffectManager.Instance != null) //
         {
             BossEffectManager.Instance.PlayChargeEffect(chargeTime, s.bulletData.breakColor, transform.position); //

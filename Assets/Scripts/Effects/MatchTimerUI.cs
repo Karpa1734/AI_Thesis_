@@ -9,7 +9,7 @@ public class MatchTimerUI : MonoBehaviour
     public static MatchTimerUI Instance;
 
     [Header("Match Settings")]
-    public float currentMatchTime = 99f; // 現在の残り時間
+    public float currentMatchTime = 180f; // 現在の残り時間
     private bool isTimerRunning = false;
     private bool isTimerStopped = false; // ★ 追加：タイマー停止フラグ
     // ★追加：無限タイマーフラグ

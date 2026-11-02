@@ -34781,7 +34781,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43ba385f513d9b741847572a22bf667a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentMatchTime: 99
+  currentMatchTime: 180
   isInfiniteTimer: 0
   timerText: {fileID: 2024962408}
   canvasGroup: {fileID: 2024962410}

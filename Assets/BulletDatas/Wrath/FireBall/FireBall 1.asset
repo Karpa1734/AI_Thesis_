@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isLaser: 0
   laserColor: 0
-  bulletPrefab: {fileID: 7699670774643920682, guid: ed639f1228a4350468b5206fb81afe3b, type: 3}
+  bulletPrefab: {fileID: 7699670774643920682, guid: 7f96b7aade130274a8117ea24c9e1f79, type: 3}
   sizeType: 0
   bulletScale: 1
   radius: 0.9

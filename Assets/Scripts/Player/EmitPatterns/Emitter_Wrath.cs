@@ -83,12 +83,6 @@ public class Emitter_Wrath : PlayerDanmakuEmitter
         float duration = 2.0f; // 罠の持続時間
         float scale = 2.5f;    // 罠のサイズ
 
-        if (isSpellActive)
-        {
-            duration = 3.5f;
-            scale = 4.0f; // 領域中ならさらに巨大化
-        }
-
         PlaySkillSE(s.sePath);
 
         // 3. 敵の座標に罠オブジェクトをインスタンス化
@@ -101,7 +95,7 @@ public class Emitter_Wrath : PlayerDanmakuEmitter
         if (trap == null) trap = trapObj.AddComponent<TrapField>();
 
         // 4. パラメータをインジェクションして起動
-        trap.Initialize(transform, s.bulletData, duration, assignedTag, assignedLayer, scale, warningTime: 0.6f);
+        trap.Initialize(transform, s.bulletData, duration, assignedTag, assignedLayer, scale, warningTime: 1.0f);
 
         yield return new WaitForSeconds(0.2f);
         _activeSkillCoroutines--;

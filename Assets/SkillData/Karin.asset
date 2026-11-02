@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f43c8d5c06716bd4393aeca4cbc58a93, type: 3}
   m_Name: Karin
   m_EditorClassIdentifier: 
-  rankHP: 2
+  rankHP: 5
   rankMP: 2
   rankAttack: 2
   rankAgility: 2

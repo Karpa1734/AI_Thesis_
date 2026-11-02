@@ -165,7 +165,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c697fdd746318c41847289dbe807a56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxScale: 2.5
+  _maxScale: 2
   _expandTime: 0.2
   _shrinkTime: 0.2
   _hitInterval: 0.4

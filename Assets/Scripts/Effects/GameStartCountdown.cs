@@ -30,7 +30,7 @@ public class GameStartCountdown : MonoBehaviour
             PlayerMove.CanShoot = true;
             if (MatchTimerUI.Instance != null)
             {
-                MatchTimerUI.Instance.ResetRoundTimer(99f);
+                MatchTimerUI.Instance.ResetRoundTimer(180);
                 MatchTimerUI.Instance.StartMatchTimer(); // 🌟 学習モード時は即座にタイマー開始
             }
             return;
@@ -50,7 +50,7 @@ public class GameStartCountdown : MonoBehaviour
         // 🌟 カウントダウン開始時は、タイマーをリセットしつつ「停止状態（待機）」にしておく
         if (MatchTimerUI.Instance != null)
         {
-            MatchTimerUI.Instance.ResetRoundTimer(99f);
+            MatchTimerUI.Instance.ResetRoundTimer(180f);
         }
 
         countdownText.gameObject.SetActive(true);

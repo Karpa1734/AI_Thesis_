@@ -40,7 +40,7 @@ MonoBehaviour:
   vjtEffectType: 0
   skillZ:
     skillName: "\u9000\u9B54\u306E\u8B77\u7B26"
-    skillIcon: {fileID: 21300000, guid: 81389833fb952f642beb021b1fa0032e, type: 3}
+    skillIcon: {fileID: 0}
     skillDescription: 
     patternType: 1
     bulletData: {fileID: 11400000, guid: 7d8f266f18fdc1d46b2a90a5d56bb2b0, type: 2}
@@ -60,7 +60,7 @@ MonoBehaviour:
     storyFireInterval: 0.05
   skillX:
     skillName: "\u72C2\u6C17\u306E\u7344\u708E"
-    skillIcon: {fileID: 21300000, guid: 24cad1715cbe98e47bd620be71fbdabd, type: 3}
+    skillIcon: {fileID: 0}
     skillDescription: 
     patternType: 2
     bulletData: {fileID: 11400000, guid: ebbb29d01e5c85c4590a588f8700d904, type: 2}
@@ -80,7 +80,7 @@ MonoBehaviour:
     storyFireInterval: 0
   skillC:
     skillName: "\u5927\u5E63\u30D6\u30FC\u30E1\u30E9\u30F3"
-    skillIcon: {fileID: 21300000, guid: cb66565d526d507489c2a10b27a5cd6c, type: 3}
+    skillIcon: {fileID: 0}
     skillDescription: 
     patternType: 8
     bulletData: {fileID: 11400000, guid: 2dd44d0a45ef7214b9d7a187ecb66369, type: 2}
@@ -100,7 +100,7 @@ MonoBehaviour:
     storyFireInterval: 0
   skillV:
     skillName: "\u795E\u79D8\u7070\u71FC"
-    skillIcon: {fileID: 21300000, guid: 4d4d4fa85c1834a469f0bb65f5ff9450, type: 3}
+    skillIcon: {fileID: 0}
     skillDescription: 
     patternType: 16
     bulletData: {fileID: 11400000, guid: 65a549f923218164cb7b228aa015c502, type: 2}

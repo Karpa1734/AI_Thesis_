@@ -97,4 +97,26 @@ public class DanmakuController : MonoBehaviour
         // このフレームでかかった外部引力をクリアして、次のフレームの注入に備える
         shell.externalPullVelocity = Vector2.zero;
     }
+    void LateUpdate()
+    {
+        if (shell == null || rb == null)
+            return;
+
+        // 実験対象のプレイヤーだけを記録
+        if (shell.playerId != 1)
+            return;
+
+        if (BattleMetricsManager.Instance == null)
+            return;
+
+        var input = shell.currentFrameInput;
+
+        // 物理演算後の位置を取得して記録
+        BattleMetricsManager.Instance.RecordMovement(
+            rb.position,
+            input.h,
+            input.v,
+            input.slow
+        );
+    }
 }

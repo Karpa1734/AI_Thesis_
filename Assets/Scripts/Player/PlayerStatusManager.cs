@@ -326,12 +326,10 @@ public class PlayerStatusManager : MonoBehaviour
             Debug.Log($"<color=magenta>👑【Story Mode】Player 2 ({characterData.characterName}) をステージボス＆弾幕モジュール化しました。</color>");
         }
 
-        // 📊 戦闘開始時にメトリクス計測を開始（1P側のみ、または共通でキック）
         if (playerId == 1 && BattleMetricsManager.Instance != null)
         {
             BattleMetricsManager.Instance.StartTracking();
         }
-
         StartCoroutine(SetupInitialUI());
         StartCoroutine(InitUIWithDelay());
     }

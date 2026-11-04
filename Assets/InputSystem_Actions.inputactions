@@ -332,7 +332,7 @@
                 {
                     "name": "",
                     "id": "b527554f-6e75-4dd8-a778-ff9dbeb28f4f",
-                    "path": "<Gamepad>/leftTrigger",
+                    "path": "<XInputController>/leftShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Gamepad",
@@ -343,10 +343,32 @@
                 {
                     "name": "",
                     "id": "e6962100-1e17-4e79-8b6a-ef67e8326c62",
-                    "path": "<XInputController>/leftTrigger",
+                    "path": "<XInputController>/leftShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Gamepad",
+                    "action": "Slow",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f42d0b2f-8e8e-49ae-8266-bfe6c565d455",
+                    "path": "<Gamepad>/rightShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Slow",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "347d7cef-4c6c-4b41-893b-67f882dabb5d",
+                    "path": "<XInputController>/rightShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
                     "action": "Slow",
                     "isComposite": false,
                     "isPartOfComposite": false

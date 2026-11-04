@@ -85,7 +85,7 @@ MonoBehaviour:
     patternType: 8
     bulletData: {fileID: 11400000, guid: 2dd44d0a45ef7214b9d7a187ecb66369, type: 2}
     trailBulletData: {fileID: 0}
-    cooldown: 3
+    cooldown: 7
     isChargeSkill: 0
     sePath: Laser2
     count: 80

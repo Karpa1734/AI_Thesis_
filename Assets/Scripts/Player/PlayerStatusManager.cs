@@ -270,7 +270,7 @@ public class PlayerStatusManager : MonoBehaviour
             Debug.Log($"<color=yellow>🔧 [DEBUG MODE] シーン直接起動を検知。インスペクターのデバッグ用データ【{characterData.characterName}】を同期しました。</color>");
         }
 #endif
-        BGMManager.Instance.Play(BGMPath.BATTLE01, 1.0f, 1.0f);
+        //BGMManager.Instance.Play(BGMPath.BATTLE01, 1.0f, 1.0f);
         ApplyCharacterSettings();
 
         if (HasPassiveSkill(PassiveSkillType.PrideStatusSteal))

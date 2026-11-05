@@ -55,6 +55,10 @@ public class BattleMetricsManager : MonoBehaviour
         public float totalDamageTaken;
         public int hitCountTaken;
         public int grazeCount;
+
+        // DefensiveFieldによって消去した自機弾数
+        public int playerBulletsClearedByField;
+
         public float averageDPS;
         public SkillUsageData skillUsage = new SkillUsageData();
     }
@@ -284,7 +288,19 @@ public class BattleMetricsManager : MonoBehaviour
     // ==========================================
     // イベントログ
     // ==========================================
+    // ==========================================
+    // 自機弾消去記録（DefensiveField）
+    // ==========================================
 
+    public void RecordPlayerBulletClearedByField()
+    {
+        if (!isTracking) return;
+
+        report.playerPerformance.playerBulletsClearedByField++;
+
+        // EventLogにも記録
+        RecordEvent("PlayerBulletClearedByField");
+    }
     public void RecordEvent(
         string eventType,
         string skillType = "",
@@ -488,7 +504,8 @@ public class BattleMetricsManager : MonoBehaviour
 
             string header =
                 "Timestamp,SubjectId,Mode,TimeLimit,Result,Duration,EnemyRemainingHP,EnemyRemainingHPRatio," +
-                "TotalDamageDealt,TotalDamageTaken,HitCountTaken,GrazeCount,AverageDPS," +
+                "TotalDamageDealt,TotalDamageTaken,HitCountTaken,GrazeCount," +
+                "EnemyBulletsClearedByField,AverageDPS," +
                 "SkillZ_Used,SkillZ_Hits,SkillX_Used,SkillX_Hits," +
                 "SkillC_Used,SkillC_Hits,SkillV_Used,SkillV_Blocked";
 
@@ -506,11 +523,17 @@ public class BattleMetricsManager : MonoBehaviour
                 b.duration.ToString("F2", CsvCulture),
                 b.enemyRemainingHP.ToString("F2", CsvCulture),
                 b.enemyRemainingHPRatio.ToString("F4", CsvCulture),
+
                 p.totalDamageDealt.ToString("F2", CsvCulture),
                 p.totalDamageTaken.ToString("F2", CsvCulture),
                 p.hitCountTaken,
                 p.grazeCount,
+
+                // DefensiveFieldによる自機弾消去数
+                p.playerBulletsClearedByField,
+
                 p.averageDPS.ToString("F2", CsvCulture),
+
                 s.skillZ_Aim.used,
                 s.skillZ_Aim.hits,
                 s.skillX_Trap.used,

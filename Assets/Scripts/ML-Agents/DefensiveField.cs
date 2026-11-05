@@ -1,7 +1,7 @@
 ﻿// --- DefensiveField.cs 連続多段ヒット＆滞在弾消し ＆ 展開中速度減衰対応版 ---
 using UnityEngine;
 using System.Collections;
-
+using System.Collections.Generic;
 /// <summary>
 /// 所有者情報を持ち、敵弾のみを消去して敵プレイヤーにのみダメージを与える防御フィールド。
 /// </summary>
@@ -11,7 +11,8 @@ public class DefensiveField : MonoBehaviour
     private Transform _owner; // 所有者のTransform
     private BulletData _data;
     private float _duration;
-
+    // 既に処理した弾のInstanceID
+    private HashSet<int> _processedBulletIds = new HashSet<int>();
     // 🌟【新規追加】：所有者の移動スクリプト参照
     private PlayerMove _ownerMove;
     [SerializeField] private float _fieldSpeedMultiplier = 0.2f; // 💡 展開中の速度倍率（例: 0.5倍速）
@@ -123,10 +124,26 @@ public class DefensiveField : MonoBehaviour
         if (_owner == null) return;
 
         // 🛑 1. 弾消し判定：フィールド内に「留まっている」「後から生まれてきた」敵弾も常時検知して即座に破砕消去！
-        if ((collision.CompareTag("PlayerBullet") || collision.CompareTag("EnemyBullet")) &&
+        // 弾消し判定
+        if ((collision.CompareTag("PlayerBullet") ||
+             collision.CompareTag("EnemyBullet")) &&
             !collision.CompareTag(gameObject.tag))
         {
+            int bulletId = collision.gameObject.GetInstanceID();
+
+            // 同じ弾を二重にカウント・処理しない
+            if (!_processedBulletIds.Add(bulletId))
+                return;
+
+            // 自機の弾だけを研究データとしてカウント
+            if (collision.CompareTag("EnemyBullet"))
+            {
+                BattleMetricsManager.Instance?
+                    .RecordPlayerBulletClearedByField();
+            }
+
             DanmakuBullet bullet = collision.GetComponent<DanmakuBullet>();
+
             if (bullet != null)
             {
                 bullet.Deactivate(true);

@@ -53,7 +53,8 @@ public class DanmakuBullet : MonoBehaviour
     private static int _smallOrderCounter = 15000;
     private static int _mediumOrderCounter = 10000;
     private static int _largeOrderCounter = 5000;
-
+    // どのスキルから生成された弾か（Z / X / C / V）
+    private string skillKey = "";
     private int AllocateNextSortingOrder(BulletSize size)
     {
         switch (size)
@@ -98,14 +99,25 @@ public class DanmakuBullet : MonoBehaviour
         return true;
     }
 
-    public void Initialize(GameObject shooter, string target, float speed, float angle, float accel, float maxSpeed, float angVel, float delay, BulletData data, bool converge = false)
+    public void Initialize(
+    GameObject shooter,
+    string target,
+    float speed,
+    float angle,
+    float accel,
+    float maxSpeed,
+    float angVel,
+    float delay,
+    BulletData data,
+    bool converge = false,
+    string skillKey = "")
     {
         this.isMovementSuspended = false;
         this._hasSelfDestructTriggered = false;
         this._selfDestructTimer = -1f;
         this.isGrazeDone = false;
         this.instanceGenerationId++;
-
+        this.skillKey = skillKey;
         // =========================================================================
         // 🎯【最核心バグ修正①】：前世代のオーラ残骸の「即時強制リネームパージ」
         // =========================================================================
@@ -459,7 +471,19 @@ public class DanmakuBullet : MonoBehaviour
             if (Time.frameCount >= _nextHitEnableFrame)
             {
                 _nextHitEnableFrame = Time.frameCount + MULTI_HIT_INTERVAL_FRAMES;
-                collision.SendMessage("OnHit", currentData.damage, SendMessageOptions.DontRequireReceiver);
+
+                PlayerHitHandler hitHandler =
+                    collision.GetComponent<PlayerHitHandler>();
+
+                if (hitHandler == null)
+                {
+                    hitHandler = collision.GetComponentInParent<PlayerHitHandler>();
+                }
+
+                if (hitHandler != null)
+                {
+                    hitHandler.OnHit(currentData.damage, skillKey);
+                }
 
                 if (!isIndestructible)
                 {

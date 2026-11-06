@@ -87,7 +87,7 @@ public class PlayerDanmakuEmitter : MonoBehaviour
         return 0f;
     }
 
-    public void Fire(PlayerSkillData.SkillSettings s)
+    public void Fire(PlayerSkillData.SkillSettings s, string skillKey = "")
     {
         if (!enabled)
         {
@@ -96,7 +96,7 @@ public class PlayerDanmakuEmitter : MonoBehaviour
             {
                 if (emitter != null && emitter.enabled)
                 {
-                    emitter.Fire(s);
+                    emitter.Fire(s, skillKey);
                     return;
                 }
             }
@@ -179,7 +179,7 @@ public class PlayerDanmakuEmitter : MonoBehaviour
                 for (int i = 0; i < roundCount; i++)
                 {
                     float angle = baseTargetAngle + (roundStep * i);
-                    ExecuteSubShot(s.bulletData, pos, bulletSpeed, angle, 0f, bulletSpeed, targetTag, gameObject.layer, s.delay);
+                    ExecuteSubShot(s.bulletData, pos, bulletSpeed, angle, 0f, bulletSpeed, targetTag, gameObject.layer, s.delay, skillKey: skillKey);
                 }
                 break;
 
@@ -190,7 +190,7 @@ public class PlayerDanmakuEmitter : MonoBehaviour
 
                 if (wayCount == 1)
                 {
-                    ExecuteSubShot(s.bulletData, pos, bulletSpeed, baseTargetAngle, 0f, bulletSpeed, targetTag, gameObject.layer, s.delay);
+                    ExecuteSubShot(s.bulletData, pos, bulletSpeed, baseTargetAngle, 0f, bulletSpeed, targetTag, gameObject.layer, s.delay, skillKey: skillKey);
                 }
                 else
                 {
@@ -199,7 +199,7 @@ public class PlayerDanmakuEmitter : MonoBehaviour
                     for (int i = 0; i < wayCount; i++)
                     {
                         float angle = startAngle + (stepAngle * i);
-                        ExecuteSubShot(s.bulletData, pos, bulletSpeed, angle, 0f, bulletSpeed, targetTag, gameObject.layer, s.delay);
+                        ExecuteSubShot(s.bulletData, pos, bulletSpeed, angle, 0f, bulletSpeed, targetTag, gameObject.layer, s.delay, skillKey: skillKey);
                     }
                 }
                 break;
@@ -210,7 +210,7 @@ public class PlayerDanmakuEmitter : MonoBehaviour
                 for (int i = 0; i < lineCount; i++)
                 {
                     float currentSpeed = bulletSpeed + (0.3f * i);
-                    ExecuteSubShot(s.bulletData, pos, currentSpeed, baseTargetAngle, 0f, currentSpeed, targetTag, gameObject.layer, s.delay);
+                    ExecuteSubShot(s.bulletData, pos, currentSpeed, baseTargetAngle, 0f, currentSpeed, targetTag, gameObject.layer, s.delay,skillKey: skillKey);
                 }
                 break;
 
@@ -226,7 +226,9 @@ public class PlayerDanmakuEmitter : MonoBehaviour
                     maxSpeed: 0f,
                     tag: targetTag,
                     layer: gameObject.layer,
-                    delay_: s.delay > 0f ? s.delay : 1.0f
+                    delay_: s.delay > 0f ? s.delay : 1.0f,
+                    skillKey: skillKey
+
                 );
                 break;
             case SkillPatternType.Saiki:
@@ -373,7 +375,7 @@ public class PlayerDanmakuEmitter : MonoBehaviour
     protected virtual IEnumerator ExecuteSkillV(PlayerSkillData.SkillSettings s) { yield return null; }
     protected virtual IEnumerator ExecuteSkillEX(PlayerSkillData.SkillSettings s) { yield return null; }
 
-    public void ExecuteSubShot(BulletData data, Vector3 pos, float speed, float angle, float accel, float maxSpeed, string tag, int layer, float delay_ = 0f)
+    public void ExecuteSubShot(BulletData data, Vector3 pos, float speed, float angle, float accel, float maxSpeed, string tag, int layer, float delay_ = 0f,string skillKey = "")
     {
         if (data == null || data.bulletPrefab == null) return;
         if (delay_ < 1) { delay_ = 1; }
@@ -394,61 +396,12 @@ public class PlayerDanmakuEmitter : MonoBehaviour
             maxSpeed: maxSpeed,
             customMaterial: null,
             customScale: 1.0f,
-            isIndestructible: false
+            isIndestructible: false,
+            skillKey: skillKey
         );
     }
 
-    public void ExecuteSubShot02(BulletData data, Vector3 pos, float speed, float angle, float accel, float maxSpeed, string tag, int layer, float angularVelocity = 0f, float maxRotationLimit = 0f)
-    {
-        if (data == null || data.bulletPrefab == null) return;
 
-        if (SEManager.Instance != null)
-        {
-            SEManager.Instance.Play(SEPath.SHOT2, 0.1f);
-        }
-
-        CreateShot(
-            data: data,
-            pos: pos,
-            speed: speed,
-            angle: angle,
-            delay: 0,
-            isConverge: false,
-            accel: accel,
-            maxSpeed: maxSpeed,
-            customMaterial: null,
-            customScale: 1.0f,
-            isIndestructible: true,
-            angularVelocity: angularVelocity,
-            maxRotationLimit: maxRotationLimit
-        );
-    }
-
-    public DanmakuBullet ExecuteSubShot02_Returnable(BulletData data, Vector3 pos, float speed, float angle, float accel, float maxSpeed, string tag, int layer, float angularVelocity = 0f, float maxRotationLimit = 0f)
-    {
-        if (data == null || data.bulletPrefab == null) return null;
-
-        if (SEManager.Instance != null)
-        {
-            SEManager.Instance.Play(SEPath.SHOT2, 0.1f);
-        }
-
-        return CreateShot(
-            data: data,
-            pos: pos,
-            speed: speed,
-            angle: angle,
-            delay: 0f,
-            isConverge: false,
-            accel: accel,
-            maxSpeed: maxSpeed,
-            customMaterial: null,
-            customScale: 1.0f,
-            isIndestructible: true,
-            angularVelocity: angularVelocity,
-            maxRotationLimit: maxRotationLimit
-        );
-    }
 
     protected void SetLayerRecursive(GameObject obj, int layer)
     {
@@ -463,7 +416,7 @@ public class PlayerDanmakuEmitter : MonoBehaviour
                                        bool isConverge = false, float accel = 0f, float maxSpeed = 0f,
                                        Material customMaterial = null, float customScale = 1.0f,
                                        bool isIndestructible = false,
-                                       float angularVelocity = 0f, float maxRotationLimit = 0f)
+                                       float angularVelocity = 0f, float maxRotationLimit = 0f, string skillKey = "")
     {
         if (data == null || data.bulletPrefab == null) return null;
         if (delay < 1.0f) { delay = 1.0f; }
@@ -518,7 +471,8 @@ public class PlayerDanmakuEmitter : MonoBehaviour
                 angVel: angularVelocity,
                 delay: delay,
                 data: runtimeData,
-                converge: isConverge
+                converge: isConverge,
+                skillKey: skillKey
             );
             bullet.isIndestructible = isIndestructible;
         }

@@ -135,11 +135,22 @@ public class DefensiveField : MonoBehaviour
             if (!_processedBulletIds.Add(bulletId))
                 return;
 
-            // 自機の弾だけを研究データとしてカウント
+            // 敵弾の消去を研究データとしてカウント
             if (collision.CompareTag("EnemyBullet"))
             {
-                BattleMetricsManager.Instance?
-                    .RecordPlayerBulletClearedByField();
+                PlayerStatusManager ownerStatus =
+                    _owner.GetComponentInParent<PlayerStatusManager>();
+
+                if (ownerStatus != null && ownerStatus.playerId == 1)
+                {
+                    // 全体の敵弾消去数
+                    BattleMetricsManager.Instance?
+                        .RecordEnemyBulletClearedByField();
+
+                    // Vスキルによる防御成功数
+                    BattleMetricsManager.Instance?
+                        .RecordSkillBlocked("V");
+                }
             }
 
             DanmakuBullet bullet = collision.GetComponent<DanmakuBullet>();
@@ -154,14 +165,40 @@ public class DefensiveField : MonoBehaviour
             }
         }
 
-        // ⚔️ 2. 敵プレイヤーへのダメージ判定：重なり続けている間、指定インターバル秒数ごとに連続OnHit！
+        // ⚔️ 2. 敵プレイヤーへのダメージ判定
         if (collision.CompareTag("Player") && collision.transform != _owner)
         {
-            // 現在のゲーム時刻が、次のヒット許可時刻を超えていれば安全に多段ヒットを執行
             if (Time.time >= _nextHitEnableTime)
             {
-                _nextHitEnableTime = Time.time + _hitInterval; // 次回発生時刻をリキャストチャージ
-                collision.SendMessage("OnHit", _data.damage, SendMessageOptions.DontRequireReceiver);
+                _nextHitEnableTime = Time.time + _hitInterval;
+
+                // 自機が使用したVスキルの場合のみ命中計測
+                PlayerStatusManager ownerStatus =
+                    _owner.GetComponentInParent<PlayerStatusManager>();
+
+                string metricSkillKey =
+                    ownerStatus != null && ownerStatus.playerId == 1 ? "V" : "";
+
+                PlayerHitHandler hitHandler =
+                    collision.GetComponent<PlayerHitHandler>();
+
+                if (hitHandler == null)
+                {
+                    hitHandler = collision.GetComponentInParent<PlayerHitHandler>();
+                }
+
+                if (hitHandler != null)
+                {
+                    hitHandler.OnHit(_data.damage, metricSkillKey);
+                }
+                else
+                {
+                    collision.SendMessage(
+                        "OnHit",
+                        _data.damage,
+                        SendMessageOptions.DontRequireReceiver
+                    );
+                }
             }
         }
     }

@@ -137,13 +137,40 @@ public class TrapField : MonoBehaviour
     {
         if (!_isActive || _owner == null) return;
 
-        // 2. 相手プレイヤーへのダメージ ＆ 滞在による移動制限（プレッシャー）付与
+        // 相手プレイヤーへのダメージ ＆ 移動制限
         if (collision.CompareTag("Player") && collision.transform != _owner)
         {
             if (Time.time >= _nextHitEnableTime)
             {
                 _nextHitEnableTime = Time.time + _hitInterval;
-                collision.SendMessage("OnHit", _data.damage, SendMessageOptions.DontRequireReceiver);
+
+                // 自機が使用したCスキルの場合のみ命中計測
+                PlayerStatusManager ownerStatus =
+                    _owner.GetComponentInParent<PlayerStatusManager>();
+
+                string metricSkillKey =
+                    ownerStatus != null && ownerStatus.playerId == 1 ? "C" : "";
+
+                PlayerHitHandler hitHandler =
+                    collision.GetComponent<PlayerHitHandler>();
+
+                if (hitHandler == null)
+                {
+                    hitHandler = collision.GetComponentInParent<PlayerHitHandler>();
+                }
+
+                if (hitHandler != null)
+                {
+                    hitHandler.OnHit(_data.damage, metricSkillKey);
+                }
+                else
+                {
+                    collision.SendMessage(
+                        "OnHit",
+                        _data.damage,
+                        SendMessageOptions.DontRequireReceiver
+                    );
+                }
             }
         }
     }

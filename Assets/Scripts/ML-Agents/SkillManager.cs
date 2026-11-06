@@ -412,7 +412,7 @@ public class SkillManager : MonoBehaviour
             {
                 _recoveryDelayTimer = 0f;
                 playerMove.currentEnergy -= settings.cost;
-                activeEmitter.Fire(settings);
+                activeEmitter.Fire(settings, skillKey);
 
                 // 🌟 スキル使用を記録
                 RecordSkill(skillKey);
@@ -425,10 +425,15 @@ public class SkillManager : MonoBehaviour
 
     private void RecordSkill(string skillKey)
     {
-        if (BattleMetricsManager.Instance != null && statusManager != null)
+        // 自機（Player 1）のみ実験ログに記録する
+        if (statusManager == null || statusManager.playerId != 1)
         {
-            // スキル発動時は used を加算するため、第2引数に true (またはヒット判定) を渡す
-            BattleMetricsManager.Instance.RecordSkillUsage(skillKey, true);
+            return;
+        }
+
+        if (BattleMetricsManager.Instance != null)
+        {
+            BattleMetricsManager.Instance.RecordSkillUsage(skillKey);
         }
     }
 

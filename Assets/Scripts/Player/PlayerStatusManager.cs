@@ -654,6 +654,51 @@ public class PlayerStatusManager : MonoBehaviour
             _wasVJTReadyLastFrame = false;
         }
 
+        // 1Pのみが中間ログを記録する
+        if (playerId != 1) return;
+
+        if (BattleMetricsManager.Instance == null) return;
+        if (!BattleMetricsManager.Instance.IsTracking()) return;
+
+        // 自機のHP
+        float playerCurrentHP = isSpellCardActive ? spellHP : currentHP;
+        float playerMaxHP = isSpellCardActive ? spellMaxHP : maxHP;
+
+        // 敵機のHPを取得
+        float enemyCurrentHP = 0f;
+        float enemyMaxHP = 0f;
+
+        if (PlayerMove.AllPlayers != null)
+        {
+            foreach (var p in PlayerMove.AllPlayers)
+            {
+                if (p == null) continue;
+
+                PlayerStatusManager enemyStatus =
+                    p.GetComponent<PlayerStatusManager>();
+
+                if (enemyStatus != null && enemyStatus.playerId == 2)
+                {
+                    enemyCurrentHP = enemyStatus.isSpellCardActive
+                        ? enemyStatus.spellHP
+                        : enemyStatus.currentHP;
+
+                    enemyMaxHP = enemyStatus.isSpellCardActive
+                        ? enemyStatus.spellMaxHP
+                        : enemyStatus.maxHP;
+
+                    break;
+                }
+            }
+        }
+
+        BattleMetricsManager.Instance.RecordBattleSnapshot(
+            playerCurrentHP,
+            playerMaxHP,
+            enemyCurrentHP,
+            enemyMaxHP
+        );
+
         UpdateUI();
     }
 
@@ -1207,8 +1252,9 @@ public class PlayerStatusManager : MonoBehaviour
         }
 
         // =========================================================================
-        // 🎯【バトルメトリクス連携】：ダメージイベントの計測マネージャーへの通知
+        // バトルメトリクス：ダメージ記録
         // =========================================================================
+
         if (BattleMetricsManager.Instance != null)
         {
             bool isPlayerHit = (playerId == 1);
@@ -1216,17 +1262,19 @@ public class PlayerStatusManager : MonoBehaviour
         }
 
         // =========================================================================
-        // 🛡️【自機の不死身化仕様】：1P（自機）の場合はダメージによるHP減少・ダウンを無効化する
-        // (ただし上記のメトリクス記録により、被弾した事実とダメージ量はしっかり計測されます)
+        // 1P（自機）はダメージによるHP減少・ダウンを無効化
         // =========================================================================
+
         if (playerId == 1)
         {
             UpdateUI();
-            return false; // 自機は被弾では絶対にやられない
+            return false;
         }
+
+        // =========================================================================
+        // 2P（敵機）の通常ダメージ処理
         // =========================================================================
 
-        // 2P（敵機）側の通常ダメージ処理
         if (isSpellCardActive)
         {
             spellHP -= amount;
@@ -1236,7 +1284,8 @@ public class PlayerStatusManager : MonoBehaviour
             {
                 spellHP = 0;
 
-                bool isStoryBossSpell = GameModeManager.IsStoryMode && playerId == 2;
+                bool isStoryBossSpell =
+                    GameModeManager.IsStoryMode && playerId == 2;
 
                 DeactivateSpellCard(true);
 
@@ -1247,6 +1296,7 @@ public class PlayerStatusManager : MonoBehaviour
 
                 return false;
             }
+
             return false;
         }
 
@@ -1257,15 +1307,52 @@ public class PlayerStatusManager : MonoBehaviour
         {
             currentHP = 0;
 
-            // 📊 敵の撃破（決着）がついた瞬間にメトリクスのトラッキングを終了して出力
+            // =========================================================================
+            // 敵撃破：戦闘ログを保存
+            // =========================================================================
+
             if (BattleMetricsManager.Instance != null)
             {
-                // 引数：(勝利フラグ=true, 現在HP=0, 最大HP=maxHP)
-                BattleMetricsManager.Instance.EndTrackingAndExport(true, 0f, maxHP);
+                float playerCurrentHP = 0f;
+                float playerMaxHP = 100f;
+
+                // 1P（自機）のHPを取得
+                if (PlayerMove.AllPlayers != null)
+                {
+                    foreach (var p in PlayerMove.AllPlayers)
+                    {
+                        if (p == null) continue;
+
+                        PlayerStatusManager ps =
+                            p.GetComponent<PlayerStatusManager>();
+
+                        if (ps != null && ps.playerId == 1)
+                        {
+                            playerCurrentHP = ps.isSpellCardActive
+                                ? ps.spellHP
+                                : ps.currentHP;
+
+                            playerMaxHP = ps.isSpellCardActive
+                                ? ps.spellMaxHP
+                                : ps.maxHP;
+
+                            break;
+                        }
+                    }
+                }
+
+                BattleMetricsManager.Instance.EndTrackingAndExport(
+                    true,
+                    0f,
+                    maxHP,
+                    playerCurrentHP,
+                    playerMaxHP
+                );
             }
 
             return true;
         }
+
         return false;
     }
 

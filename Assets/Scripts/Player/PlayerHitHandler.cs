@@ -75,8 +75,13 @@ public class PlayerHitHandler : MonoBehaviour
             return;
         }
     }
-
     public void OnHit(int damage)
+    {
+        OnHit(damage, "");
+    }
+
+
+    public void OnHit(int damage, string skillKey = "")
     {
         Vector3 hitPos = transform.position;
 
@@ -121,7 +126,24 @@ public class PlayerHitHandler : MonoBehaviour
             bool wasSpellActive = myStatusManager.isSpellCardActive;
 
             // ダメージの実際の適用（バリアが削り切られたらここで true が返ります）
+            // ダメージ適用前のHPを記録
+            float hpBefore = myStatusManager.isSpellCardActive
+                ? myStatusManager.spellHP
+                : myStatusManager.currentHP;
+
+            // ダメージ適用
             isDown = myStatusManager.ApplyDamage(damage);
+
+            // ダメージ適用後のHPを確認
+            float hpAfter = myStatusManager.isSpellCardActive
+                ? myStatusManager.spellHP
+                : myStatusManager.currentHP;
+
+            // 実際にHPが減少していた場合のみ命中記録
+            if (hpAfter < hpBefore && !string.IsNullOrEmpty(skillKey))
+            {
+                BattleMetricsManager.Instance?.RecordSkillHit(skillKey);
+            }
 
             // 🌟 ストーリーボスのスペルバリアが剥がれた（削り切られた）瞬間である場合、
             // 通常HPの残りに関わらず、即座にダウン（フェーズ進行）を確定させる！
@@ -509,59 +531,102 @@ public class PlayerHitHandler : MonoBehaviour
     /// </summary>
     public void EvaluateTimeUpVictory()
     {
-        if (PlayerMove.AllPlayers == null || PlayerMove.AllPlayers.Count < 2) return;
+        if (PlayerMove.AllPlayers == null || PlayerMove.AllPlayers.Count < 2)
+            return;
 
-        // 1. まず、タイムアップ時点でバトルの計測（JSON出力）を「時間切れ敗北（false）」として終了させる
-        if (BattleMetricsManager.Instance != null)
-        {
-            // 敵の現在HPと最大HPを取得して渡す
-            float enemyCurrentHP = 0f;
-            float enemyMaxHP = 100f;
-            foreach (var p in PlayerMove.AllPlayers)
-            {
-                if (p != null)
-                {
-                    PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>();
-                    if (ps != null && ps.playerId == 2)
-                    {
-                        enemyCurrentHP = ps.isSpellCardActive ? ps.spellHP : ps.currentHP;
-                        enemyMaxHP = ps.isSpellCardActive ? ps.spellMaxHP : ps.maxHP;
-                        break;
-                    }
-                }
-            }
-            BattleMetricsManager.Instance.EndTrackingAndExport(false, enemyCurrentHP, enemyMaxHP);
-        }
+        // ==========================================
+        // 1. プレイヤーと敵のHPを取得
+        // ==========================================
 
-        // 2. 1P（自機）を取得して強制敗北演出（爆発・ゲームオーバー）を安全にキックする
-        PlayerMove p1 = null;
+        float enemyCurrentHP = 0f;
+        float enemyMaxHP = 100f;
+
+        float playerCurrentHP = 0f;
+        float playerMaxHP = 100f;
+
         foreach (var p in PlayerMove.AllPlayers)
         {
-            if (p != null)
+            if (p == null) continue;
+
+            PlayerStatusManager ps = p.GetComponent<PlayerStatusManager>();
+            if (ps == null) continue;
+
+            if (ps.playerId == 1)
             {
-                PlayerStatusManager status = p.GetComponent<PlayerStatusManager>();
-                if (status != null && status.playerId == 1)
-                {
-                    p1 = p;
-                    break;
-                }
+                // 1P（自機）のHP
+                playerCurrentHP = ps.isSpellCardActive
+                    ? ps.spellHP
+                    : ps.currentHP;
+
+                playerMaxHP = ps.isSpellCardActive
+                    ? ps.spellMaxHP
+                    : ps.maxHP;
+            }
+            else if (ps.playerId == 2)
+            {
+                // 2P（敵）のHP
+                enemyCurrentHP = ps.isSpellCardActive
+                    ? ps.spellHP
+                    : ps.currentHP;
+
+                enemyMaxHP = ps.isSpellCardActive
+                    ? ps.spellMaxHP
+                    : ps.maxHP;
+            }
+        }
+
+        // ==========================================
+        // 2. 戦闘ログを保存
+        // ==========================================
+
+        if (BattleMetricsManager.Instance != null)
+        {
+            BattleMetricsManager.Instance.EndTrackingAndExport(
+                false,
+                enemyCurrentHP,
+                enemyMaxHP,
+                playerCurrentHP,
+                playerMaxHP
+            );
+        }
+
+        // ==========================================
+        // 3. 1P（自機）の敗北演出
+        // ==========================================
+
+        PlayerMove p1 = null;
+
+        foreach (var p in PlayerMove.AllPlayers)
+        {
+            if (p == null) continue;
+
+            PlayerStatusManager status = p.GetComponent<PlayerStatusManager>();
+
+            if (status != null && status.playerId == 1)
+            {
+                p1 = p;
+                break;
             }
         }
 
         if (p1 != null)
         {
-            PlayerHitHandler loserHandler = p1.GetComponentInChildren<PlayerHitHandler>();
+            PlayerHitHandler loserHandler =
+                p1.GetComponentInChildren<PlayerHitHandler>();
+
             if (loserHandler != null)
             {
                 loserHandler.isTriggeredByTimeUp = true;
                 loserHandler.currentState = PlayerState.Hit;
 
-                // フリーズを防ぐため、コルーチンではなく直接ゲームオーバー処理（またはトリガー）を安全に呼ぶか、無敵を解除してコルーチンを走らせる
                 if (loserHandler.playerMove != null)
                 {
-                    loserHandler.playerMove.invincibleTimer = 0f; // 無敵を強制解除
+                    loserHandler.playerMove.invincibleTimer = 0f;
                 }
-                loserHandler.StartCoroutine(loserHandler.ExplosionAndStunRoutine());
+
+                loserHandler.StartCoroutine(
+                    loserHandler.ExplosionAndStunRoutine()
+                );
             }
         }
     }

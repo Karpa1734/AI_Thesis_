@@ -110,25 +110,8 @@ public class LustEXExplosionField : MonoBehaviour
                     crossIndex++;
                     float assignedAngVel = baseAngleVelocityFrame * curSign;
 
-                    // ⭕ 開通：Returnableメソッドから生成した実体をダイレクトに検知補獲！
-                    DanmakuBullet b = _emitter.ExecuteSubShot02_Returnable(
-                        data: _bulletData,
-                        pos: transform.position,
-                        speed: speedForLayer,
-                        angle: finalAngle,
-                        accel: 0f,
-                        maxSpeed: 0f,
-                        tag: gameObject.tag,
-                        layer: gameObject.layer,
-                        angularVelocity: assignedAngVel,
-                        maxRotationLimit: maxRotationLimitDegrees
-                    );
 
-                    if (b != null)
-                    {
-                        spawnedBullets.Add(b);
-                        initialAngles.Add(finalAngle);
-                    }
+
                 }
 
                 // 1列生成するごとに1物理フレームの猶予をあたえて負荷分散

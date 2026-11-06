@@ -18,17 +18,29 @@ public class BattleMetricsManager : MonoBehaviour
     {
         public string subjectId = "";
         public string mode = "Proposed";
+        public int trialNumber = 1;
+        public string characterId = "";
+
+        // 試行全体の制限時間
         public float timeLimit = 180f;
+
+        // フェーズ構成
+        public int phaseCount = 1;
+        public float phaseTimeLimit = 180f;
+
         public string timestamp;
     }
-
     [System.Serializable]
     public class BattleResultData
     {
         public string result = "Victory";
         public float duration;
+
         public float enemyRemainingHP;
         public float enemyRemainingHPRatio;
+
+        public float playerRemainingHP;
+        public float playerRemainingHPRatio;
     }
 
     [System.Serializable]
@@ -57,7 +69,8 @@ public class BattleMetricsManager : MonoBehaviour
         public int grazeCount;
 
         // DefensiveFieldによって消去した自機弾数
-        public int playerBulletsClearedByField;
+        // DefensiveFieldによって消去した敵弾数
+        public int enemyBulletsClearedByField;
 
         public float averageDPS;
         public SkillUsageData skillUsage = new SkillUsageData();
@@ -99,8 +112,13 @@ public class BattleMetricsManager : MonoBehaviour
 
     private bool eventHeaderWritten = false;
 
-    private const string EXPERIMENT_MODE = "Proposed";
-    private const float TIME_LIMIT = 180f;
+    private string currentMode = "Proposed";
+    private int currentTrialNumber = 1;
+    private string currentCharacterId = "";
+
+    private float currentTimeLimit = 180f;
+    private int currentPhaseCount = 1;
+    private float currentPhaseTimeLimit = 180f;
 
     private static readonly CultureInfo CsvCulture =
         CultureInfo.InvariantCulture;
@@ -111,7 +129,10 @@ public class BattleMetricsManager : MonoBehaviour
     private bool hasPreviousMovementPosition = false;
 
     private const float MovementSampleInterval = 0.1f;
+    private string snapshotLogPath;
 
+    private float lastSnapshotTime = 0f;
+    private const float SnapshotSampleInterval = 10f;
     // ==========================================
     // Singleton / シーン遷移対応
     // ==========================================
@@ -133,21 +154,24 @@ public class BattleMetricsManager : MonoBehaviour
     // 参加者ID設定
     // ==========================================
 
-    public bool ConfigureTrial(string subjectId)
+    public bool ConfigureTrial(
+        string subjectId,
+        string mode = "Proposed",
+        int trialNumber = 1,
+        string characterId = "",
+        float timeLimit = 180f,
+        int phaseCount = 1,
+        float phaseTimeLimit = 180f)
     {
         if (isTracking)
         {
-            Debug.LogWarning(
-                "[BattleMetrics] 計測中はIDを変更できません。");
-
+            Debug.LogWarning("[BattleMetrics] 計測中は設定を変更できません。");
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(subjectId))
         {
-            Debug.LogError(
-                "[BattleMetrics] 参加者IDが入力されていません。");
-
+            Debug.LogError("[BattleMetrics] 参加者IDが入力されていません。");
             return false;
         }
 
@@ -155,16 +179,29 @@ public class BattleMetricsManager : MonoBehaviour
 
         if (!Regex.IsMatch(subjectId, @"^[A-Za-z0-9_-]+$"))
         {
-            Debug.LogError(
-                "[BattleMetrics] 参加者IDが不正です。");
+            Debug.LogError("[BattleMetrics] 参加者IDが不正です。");
+            return false;
+        }
 
+        if (string.IsNullOrWhiteSpace(mode) ||
+            trialNumber < 1 ||
+            timeLimit <= 0f ||
+            phaseCount < 1 ||
+            phaseTimeLimit <= 0f)
+        {
+            Debug.LogError("[BattleMetrics] 実験条件が不正です。");
             return false;
         }
 
         currentSubjectId = subjectId;
+        currentMode = mode;
+        currentTrialNumber = trialNumber;
+        currentCharacterId = characterId;
+        currentTimeLimit = timeLimit;
+        currentPhaseCount = phaseCount;
+        currentPhaseTimeLimit = phaseTimeLimit;
 
-        Debug.Log(
-            $"[BattleMetrics] 参加者ID設定: {currentSubjectId}");
+        Debug.Log($"[BattleMetrics] 実験設定: {subjectId}, {mode}, Trial {trialNumber}");
 
         return true;
     }
@@ -210,26 +247,36 @@ public class BattleMetricsManager : MonoBehaviour
         report = new BattleReportRoot();
 
         report.trialMeta.subjectId = currentSubjectId;
-        report.trialMeta.mode = EXPERIMENT_MODE;
-        report.trialMeta.timeLimit = TIME_LIMIT;
+        report.trialMeta.mode = currentMode;
+        report.trialMeta.trialNumber = currentTrialNumber;
+        report.trialMeta.characterId = currentCharacterId;
+
+        report.trialMeta.timeLimit = currentTimeLimit;
+        report.trialMeta.phaseCount = currentPhaseCount;
+        report.trialMeta.phaseTimeLimit = currentPhaseTimeLimit;
 
         report.trialMeta.timestamp =
             DateTimeOffset.Now.ToString("o");
 
+        snapshotLogPath = Path.Combine(
+    logDirectory,
+    $"{currentSubjectId}_{currentMode}_Trial{currentTrialNumber}_BattleSnapshotLog.csv"
+);
+
         // ファイルパス設定
         reportFilePath = Path.Combine(
             logDirectory,
-            $"{currentSubjectId}_{EXPERIMENT_MODE}_BattleReport.csv"
+            $"{currentSubjectId}_{report.trialMeta.mode}_BattleReport.csv"
         );
 
         eventFilePath = Path.Combine(
             logDirectory,
-            $"{currentSubjectId}_{EXPERIMENT_MODE}_EventLog.csv"
+            $"{currentSubjectId}_{report.trialMeta.mode}_EventLog.csv"
         );
 
         movementLogPath = Path.Combine(
             logDirectory,
-            $"{currentSubjectId}_{EXPERIMENT_MODE}_MovementLog.csv"
+            $"{currentSubjectId}_{report.trialMeta.mode}_MovementLog.csv"
         );
 
         // 時間・移動情報初期化
@@ -256,6 +303,29 @@ public class BattleMetricsManager : MonoBehaviour
 
             movementLogPath = null;
             return;
+        }
+
+        lastSnapshotTime = 0f;
+
+        try
+        {
+            File.WriteAllText(
+                snapshotLogPath,
+                "SubjectId,Mode,TrialNumber,ElapsedTime," +
+                "PlayerHP,PlayerHPRatio," +
+                "EnemyHP,EnemyHPRatio," +
+                "TotalDamageDealt,TotalDamageTaken," +
+                "HitCountTaken\n",
+                new UTF8Encoding(true)
+            );
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(
+                $"[BattleMetrics] SnapshotLog初期化失敗: {e.Message}"
+            );
+
+            snapshotLogPath = null;
         }
 
         isTracking = true;
@@ -292,14 +362,79 @@ public class BattleMetricsManager : MonoBehaviour
     // 自機弾消去記録（DefensiveField）
     // ==========================================
 
-    public void RecordPlayerBulletClearedByField()
+    /// <summary>
+    /// 10秒間隔で戦闘状況を記録する
+    /// </summary>
+    public void RecordBattleSnapshot(
+        float playerCurrentHP,
+        float playerMaxHP,
+        float enemyCurrentHP,
+        float enemyMaxHP)
+    {
+        if (!isTracking) return;
+        if (string.IsNullOrEmpty(snapshotLogPath)) return;
+
+        if (matchDurationTimer - lastSnapshotTime < SnapshotSampleInterval)
+            return;
+
+        lastSnapshotTime = matchDurationTimer;
+
+        float playerRatio = playerMaxHP > 0f
+            ? Mathf.Clamp01(playerCurrentHP / playerMaxHP)
+            : 0f;
+
+        float enemyRatio = enemyMaxHP > 0f
+            ? Mathf.Clamp01(enemyCurrentHP / enemyMaxHP)
+            : 0f;
+
+        var p = report.playerPerformance;
+
+        string line = string.Join(",",
+            EscapeCsv(currentSubjectId),
+            EscapeCsv(currentMode),
+            currentTrialNumber,
+            matchDurationTimer.ToString("F2", CsvCulture),
+            playerCurrentHP.ToString("F2", CsvCulture),
+            playerRatio.ToString("F4", CsvCulture),
+            enemyCurrentHP.ToString("F2", CsvCulture),
+            enemyRatio.ToString("F4", CsvCulture),
+            p.totalDamageDealt.ToString("F2", CsvCulture),
+            p.totalDamageTaken.ToString("F2", CsvCulture),
+            p.hitCountTaken,
+            p.grazeCount
+        );
+
+        try
+        {
+            File.AppendAllText(
+                snapshotLogPath,
+                line + "\n",
+                new UTF8Encoding(true)
+            );
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(
+                $"[BattleMetrics] SnapshotLog保存失敗: {e.Message}"
+            );
+        }
+    }
+
+    /// <summary>
+    /// DefensiveFieldによって敵弾を消去したときの記録
+    /// </summary>
+    public void RecordEnemyBulletClearedByField()
     {
         if (!isTracking) return;
 
-        report.playerPerformance.playerBulletsClearedByField++;
+        // 敵弾消去数
+        report.playerPerformance.enemyBulletsClearedByField++;
+
+        // Vスキルの防御成功回数
+        RecordSkillBlocked("V");
 
         // EventLogにも記録
-        RecordEvent("PlayerBulletClearedByField");
+        RecordEvent("EnemyBulletClearedByField", "V");
     }
     public void RecordEvent(
         string eventType,
@@ -327,7 +462,7 @@ public class BattleMetricsManager : MonoBehaviour
 
                 string row = string.Join(",",
                     EscapeCsv(currentSubjectId),
-                    EXPERIMENT_MODE,
+                    report.trialMeta.mode,
                     matchDurationTimer.ToString("F3", CsvCulture),
                     EscapeCsv(eventType),
                     EscapeCsv(skillType),
@@ -382,70 +517,72 @@ public class BattleMetricsManager : MonoBehaviour
     // スキル使用記録
     // ==========================================
 
-    public void RecordSkillUsage(
-        string skillKey,
-        bool isHit = false)
+    // スキルを発動したとき
+    public void RecordSkillUsage(string skillKey)
     {
         if (!isTracking) return;
 
+        SkillStat stat = GetSkillStat(skillKey);
+        if (stat == null) return;
+
+        stat.used++;
+
+        RecordEvent("SkillUse", skillKey);
+    }
+
+    // スキルが敵に命中・効果を与えたとき
+    public void RecordSkillHit(string skillKey, int count = 1)
+    {
+        if (!isTracking || count <= 0) return;
+
+        SkillStat stat = GetSkillStat(skillKey);
+        if (stat == null) return;
+
+        stat.hits += count;
+
+        RecordEvent("SkillHit", skillKey, count);
+    }
+
+    // Vなどの防御スキルで攻撃を防いだとき
+    public void RecordSkillBlocked(string skillKey, int count = 1)
+    {
+        if (!isTracking || count <= 0) return;
+
+        SkillStat stat = GetSkillStat(skillKey);
+        if (stat == null) return;
+
+        stat.blockedHits += count;
+
+        RecordEvent("SkillBlocked", skillKey, count);
+    }
+
+    private SkillStat GetSkillStat(string skillKey)
+    {
         switch (skillKey)
         {
             case "Z":
-                report.playerPerformance.skillUsage.skillZ_Aim.used++;
-
-                if (isHit)
-                    report.playerPerformance.skillUsage.skillZ_Aim.hits++;
-
-                break;
+                return report.playerPerformance.skillUsage.skillZ_Aim;
 
             case "X":
-                report.playerPerformance.skillUsage.skillX_Trap.used++;
-
-                if (isHit)
-                    report.playerPerformance.skillUsage.skillX_Trap.hits++;
-
-                break;
+                return report.playerPerformance.skillUsage.skillX_Trap;
 
             case "C":
-                report.playerPerformance.skillUsage.skillC_Special.used++;
-
-                if (isHit)
-                    report.playerPerformance.skillUsage.skillC_Special.hits++;
-
-                break;
+                return report.playerPerformance.skillUsage.skillC_Special;
 
             case "V":
-                report.playerPerformance.skillUsage.skillV_Guard.used++;
-
-                if (isHit)
-                {
-                    report.playerPerformance.skillUsage.skillV_Guard.blockedHits++;
-                }
-
-                break;
+                return report.playerPerformance.skillUsage.skillV_Guard;
 
             default:
                 Debug.LogWarning(
                     $"[BattleMetrics] 未定義のスキル: {skillKey}");
-
-                return;
+                return null;
         }
-
-        RecordEvent("SkillUse", skillKey, isHit ? 1f : 0f);
     }
 
     // ==========================================
     // グレイズ記録
     // ==========================================
 
-    public void RecordGraze()
-    {
-        if (!isTracking) return;
-
-        report.playerPerformance.grazeCount++;
-
-        RecordEvent("Graze");
-    }
 
     // ==========================================
     // 戦闘終了・保存
@@ -454,7 +591,9 @@ public class BattleMetricsManager : MonoBehaviour
     public void EndTrackingAndExport(
         bool isVictory,
         float enemyCurrentHP,
-        float enemyMaxHP)
+        float enemyMaxHP,
+        float playerCurrentHP,
+        float playerMaxHP)
     {
         if (!isTracking) return;
 
@@ -471,27 +610,30 @@ public class BattleMetricsManager : MonoBehaviour
                 ? Mathf.Clamp01(enemyCurrentHP / enemyMaxHP)
                 : 0f;
 
+        report.battleResult.playerRemainingHP =
+            Mathf.Max(0f, playerCurrentHP);
+
+        report.battleResult.playerRemainingHPRatio =
+            playerMaxHP > 0f
+                ? Mathf.Clamp01(playerCurrentHP / playerMaxHP)
+                : 0f;
+
         report.playerPerformance.averageDPS =
             matchDurationTimer > 0f
-                ? report.playerPerformance.totalDamageDealt /
-                  matchDurationTimer
+                ? report.playerPerformance.totalDamageDealt / matchDurationTimer
                 : 0f;
 
         report.enemyPerformance.totalDamageDealt =
             report.playerPerformance.totalDamageTaken;
 
-        RecordEvent(
-            isVictory ? "Victory" : "TimeUpDefeat"
-        );
+        RecordEvent(isVictory ? "Victory" : "TimeUpDefeat");
 
         isTracking = false;
 
         ExportToCsv();
 
-        Debug.Log(
-            $"[BattleMetrics] 提案モード実験終了: {currentSubjectId}");
+        Debug.Log($"[BattleMetrics] 実験終了: {currentSubjectId}");
     }
-
     // ==========================================
     // BattleReport CSV出力
     // ==========================================
@@ -503,11 +645,17 @@ public class BattleMetricsManager : MonoBehaviour
             bool fileExists = File.Exists(reportFilePath);
 
             string header =
-                "Timestamp,SubjectId,Mode,TimeLimit,Result,Duration,EnemyRemainingHP,EnemyRemainingHPRatio," +
-                "TotalDamageDealt,TotalDamageTaken,HitCountTaken,GrazeCount," +
-                "EnemyBulletsClearedByField,AverageDPS," +
-                "SkillZ_Used,SkillZ_Hits,SkillX_Used,SkillX_Hits," +
-                "SkillC_Used,SkillC_Hits,SkillV_Used,SkillV_Blocked";
+                "Timestamp,SubjectId,Mode,TrialNumber,CharacterId," +
+                "TimeLimit,PhaseCount,PhaseTimeLimit,Result,Duration," +
+                "EnemyRemainingHP,EnemyRemainingHPRatio," +
+                "PlayerRemainingHP,PlayerRemainingHPRatio," +
+                "TotalDamageDealt,TotalDamageTaken,HitCountTaken," +
+                "EnemyBulletsClearedByField," +
+                "AverageDPS," +
+                "SkillZ_Used,SkillZ_Hits," +
+                "SkillX_Used,SkillX_Hits," +
+                "SkillC_Used,SkillC_Hits," +
+                "SkillV_Used,SkillV_Blocked";
 
             var p = report.playerPerformance;
             var s = p.skillUsage;
@@ -517,20 +665,28 @@ public class BattleMetricsManager : MonoBehaviour
             string row = string.Join(",",
                 EscapeCsv(t.timestamp),
                 EscapeCsv(t.subjectId),
-                EXPERIMENT_MODE,
+                EscapeCsv(t.mode),
+                t.trialNumber,
+                EscapeCsv(t.characterId),
+
                 t.timeLimit.ToString("F2", CsvCulture),
+                t.phaseCount,
+                t.phaseTimeLimit.ToString("F2", CsvCulture),
+
                 EscapeCsv(b.result),
                 b.duration.ToString("F2", CsvCulture),
+
                 b.enemyRemainingHP.ToString("F2", CsvCulture),
                 b.enemyRemainingHPRatio.ToString("F4", CsvCulture),
+
+                b.playerRemainingHP.ToString("F2", CsvCulture),
+                b.playerRemainingHPRatio.ToString("F4", CsvCulture),
 
                 p.totalDamageDealt.ToString("F2", CsvCulture),
                 p.totalDamageTaken.ToString("F2", CsvCulture),
                 p.hitCountTaken,
-                p.grazeCount,
 
-                // DefensiveFieldによる自機弾消去数
-                p.playerBulletsClearedByField,
+                p.enemyBulletsClearedByField,
 
                 p.averageDPS.ToString("F2", CsvCulture),
 
@@ -603,7 +759,7 @@ public class BattleMetricsManager : MonoBehaviour
 
         string line = string.Join(",",
             EscapeCsv(currentSubjectId),
-            EXPERIMENT_MODE,
+            report.trialMeta.mode,
             matchDurationTimer.ToString("F2", CsvCulture),
             position.x.ToString("F4", CsvCulture),
             position.y.ToString("F4", CsvCulture),

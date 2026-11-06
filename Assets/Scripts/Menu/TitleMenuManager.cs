@@ -41,10 +41,12 @@ public class TitleMenuManager : MonoBehaviour
     private bool _isMenuFirstScrollDone = false;
     private const float MENU_FIRST_SCROLL_DELAY = 0.4f;
     private const float MENU_REPEAT_SCROLL_SPEED = 0.12f;
-
+    [Header("Experiment Setup")]
+    [SerializeField]
+    private ExperimentSetupUI experimentSetupUI;
     void Start()
     {
-        BGMManager.Instance.Play(BGMPath.TITLE,1.0f);
+        //BGMManager.Instance.Play(BGMPath.TITLE,1.0f);
         BossPracticeManager.IsPracticeMode = false;
 
         if (practiceSubMenu != null) practiceSubMenu.SetActive(false);
@@ -106,6 +108,11 @@ public class TitleMenuManager : MonoBehaviour
         bool isUpHeld = false;
         bool isDownHeld = false;
         bool isDecidePressed = false;
+        if (experimentSetupUI != null &&
+    experimentSetupUI.IsInputFieldFocused())
+        {
+            return;
+        }
 
         if (MenuInputManager.Instance != null)
         {
@@ -232,8 +239,22 @@ public class TitleMenuManager : MonoBehaviour
     // =========================================================================
     void OpenCharSelect(GameSelectionData.GameMode mode)
     {
+        // 参加者IDの登録を確認
+        if (experimentSetupUI == null)
+        {
+            Debug.LogError("ExperimentSetupUIが設定されていません。");
+            return;
+        }
+
+        if (!experimentSetupUI.SetParticipantId())
+        {
+            return;
+        }
+
         // 1. 選択データを共有バッファにセット
-        GameSelectionData.CurrentMode = mode; 
+        GameSelectionData.CurrentMode = mode;
+
+        // 以下は既存の処理をそのまま残す
 
         // 2. 🌟 StoryモードかVersusモードかのフラグを厳密に立てる
         if (mode == GameSelectionData.GameMode.Story)

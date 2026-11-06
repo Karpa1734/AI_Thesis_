@@ -106,7 +106,8 @@ public class CharacterSelectManager : MonoBehaviour
     public GameObject loadingScreenCanvas;
     public Slider progressBarSlider;
     public TextMeshProUGUI progressText;
-
+    // シーン遷移の多重実行防止
+    private bool _isLoadingScene = false;
     void Awake()
     {
         //SetDetailCanvasVisible(1, false);
@@ -204,6 +205,10 @@ public class CharacterSelectManager : MonoBehaviour
 
     void Update()
     {
+        if (_isLoadingScene) return;
+
+
+
         // 1. スキル詳細モードのトグル切り替え（F / Rキー）は維持
         if (Input.GetKeyDown(KeyCode.F) && !_isP1SkillDetailMode)
         {
@@ -277,7 +282,7 @@ public class CharacterSelectManager : MonoBehaviour
 
             if (SEManager.Instance != null) SEManager.Instance.Play(SEPath.MENUSELECT, 0.5f);
             if (isDetailOpen) //UpdateSkillDetailVisuals(1);
-            return;
+                return;
         }
 
         if (isDetailOpen)
@@ -732,12 +737,24 @@ public class CharacterSelectManager : MonoBehaviour
 
     private void LoadGameplayScene()
     {
+        // すでにロード処理中なら何もしない
+        if (_isLoadingScene) return;
+
+        // 最初の一回だけ実行
+        _isLoadingScene = true;
+
+        // 以降の入力を受け付けない
+        _inputCooldownTimer = float.MaxValue;
+
         BGMManager.Instance.FadeOut();
         StartCoroutine(LoadSceneAsyncRoutine("Shoot"));
     }
 
     private IEnumerator LoadSceneAsyncRoutine(string sceneName)
     {
+        // ロード処理中でなければ開始しない
+        if (!_isLoadingScene) yield break;
+
         if (loadingScreenCanvas != null)
         {
             loadingScreenCanvas.SetActive(true);
@@ -745,6 +762,9 @@ public class CharacterSelectManager : MonoBehaviour
 
         AsyncOperation asyncOp = SceneManager.LoadSceneAsync(sceneName);
         asyncOp.allowSceneActivation = false;
+
+
+
 
         float fakeProgress = 0f;
         float targetFakeProgress = 0f;
